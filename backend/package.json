@@ -1,7 +1,7 @@
 {
-  "name": "realtime-chat-app",
+  "name": "esmedia",
   "version": "1.0.0",
-  "description": "realtime chatting website",
+  "description": "social media and realtime chatting website",
   "main": "app.js",
   "type": "module",
   "scripts": {
@@ -16,6 +16,9 @@
     "cors": "^2.8.5",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.5",
     "socket.io": "^4.7.2"
   },
   "devDependencies": {
