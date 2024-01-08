@@ -6,9 +6,9 @@ export const getUser = async (userId) => {
 
   const [rows] = await userModel.findById(userId);
 
-  if (rows.length === 0) throw new CustomError('User not found', 400);
+  if (!rows) throw new CustomError('User not found', 400);
 
-  return rows[0];
+  return rows;
 };
 
 export const updateUser = async (userId, data) => {
@@ -16,7 +16,7 @@ export const updateUser = async (userId, data) => {
 
   const result = await userModel.updateById(userId, data);
 
-  if (result.affectedRows === 0)
+  if (!result.affectedRows)
     throw new CustomError('No user found with the provided id', 400);
 
   return result.info;

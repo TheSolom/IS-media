@@ -1,43 +1,28 @@
 import jwt from 'jsonwebtoken';
 
-import UserModel from '../models/userModel.js';
+import CustomError from '../utils/errorHandling.js';
+import parseCookies from '../utils/parseCookies.js';
+import TokenBlacklistModel from '../models/tokenBlacklistModel.js';
 
-export const requireAuth = (req, res, next) => {
-  const token = req.cookies.jwt;
+export default async (req, _res, next) => {
+  try {
+    const cookies = req.headers.cookie;
+    if (!cookies) throw new CustomError('You must be logged in', 401);
 
-  // check json web token exists & is verified
-  if (token) {
-    jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken) => {
-      if (err) {
-        console.log(err.message);
-        res.redirect('/login');
-      } else {
-        console.log(decodedToken);
-        next();
-      }
-    });
-  } else {
-    res.redirect('/login');
-  }
-};
+    const parsedCookies = parseCookies(cookies);
 
-// check current user
-export const checkUser = (req, res, next) => {
-  const token = req.cookies.jwt;
-  if (token) {
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decodedToken) => {
-      if (err) {
-        res.locals.user = null;
-        next();
-      } else {
-        const userModel = new UserModel();
-        const user = await userModel.findById(decodedToken.id);
-        res.locals.user = user;
-        next();
-      }
-    });
-  } else {
-    res.locals.user = null;
+    const tokenBlacklist = new TokenBlacklistModel();
+    const isTokenBlacklisted = await tokenBlacklist.findByToken(
+      parsedCookies.jwt
+    );
+
+    if (isTokenBlacklisted.length) throw new CustomError('Login expired', 401);
+
+    const { id } = jwt.verify(parsedCookies.jwt, process.env.JWT_SECRET);
+    req.userId = id;
+
     next();
+  } catch (error) {
+    next(error);
   }
 };

@@ -24,8 +24,8 @@ app.use(express.json());
 
 app.use(cors({ credentials: true }));
 
-app.use(userRoutes);
 app.use(authRoutes);
+app.use('/user', userRoutes);
 
 io.on('connection', (socket) => {
   console.log('a user connected');

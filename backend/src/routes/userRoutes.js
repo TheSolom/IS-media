@@ -1,12 +1,14 @@
 import express from 'express';
 
+import authMiddleware from '../middlewares/authMiddleware.js';
 import { getUser, updateUser } from '../controllers/userController.js';
-import { signupValidation } from '../validations/authValidation.js';
 
 const router = express.Router();
 
-router.get('/user/:userId', getUser);
+router.use(authMiddleware);
 
-router.patch('/user/:userId', updateUser);
+router.get('/:userId', getUser);
+
+router.patch('/:userId', updateUser);
 
 export default router;

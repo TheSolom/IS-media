@@ -1,20 +1,28 @@
 import connection from '../configs/database.js';
 
 export default class BaseModel {
+  #tableName;
+
   constructor(tableName) {
-    this.tableName = tableName;
+    this.#tableName = tableName;
+  }
+
+  getTableName() {
+    return this.#tableName;
   }
 
   async findAll() {
-    const query = `SELECT * FROM ${this.tableName}`;
+    const query = `SELECT * FROM ${this.getTableName()}`;
+
     const result = await connection.execute(query);
-    return result;
+    return result[0];
   }
 
   async findById(id) {
-    const query = `SELECT * FROM ${this.tableName} WHERE id = ?`;
+    const query = `SELECT * FROM ${this.getTableName()} WHERE id = ?`;
+
     const result = await connection.execute(query, [id]);
-    return result;
+    return result[0];
   }
 
   async create(data) {
@@ -24,8 +32,9 @@ export default class BaseModel {
     const values = Object.values(data)
       .map(() => '?')
       .join(', ');
-    // console.log(columns, values); // `firstname`, `lastname`, `username`, `email`, `password`, `isAdmin` ?, ?, ?, ?, ?, ?
-    const query = `INSERT INTO ${this.tableName} (${columns}) VALUES (${values})`;
+
+    const query = `INSERT INTO ${this.getTableName()} (${columns}) VALUES (${values})`;
+
     const result = await connection.execute(query, Object.values(data));
     return result[0];
   }
@@ -36,14 +45,16 @@ export default class BaseModel {
       .map(([key, value]) => `${key} = ${connection.escape(value)}`)
       .join(', ');
 
-    const query = `UPDATE ${this.tableName} SET ${setClause} WHERE id = ?`;
+    const query = `UPDATE ${this.getTableName()} SET ${setClause} WHERE id = ?`;
+
     const result = await connection.execute(query, [id]);
     return result[0];
   }
 
   async deleteById(id) {
-    const query = `DELETE FROM ${this.tableName} WHERE id = ?`;
+    const query = `DELETE FROM ${this.getTableName()} WHERE id = ?`;
+
     const result = await connection.execute(query, [id]);
-    return result.affectedRows;
+    return result[0];
   }
 }

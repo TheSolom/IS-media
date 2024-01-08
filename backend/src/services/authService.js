@@ -1,17 +1,24 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-import CustomError from '../utils/errorHandling.js';
+import parseCookies from '../utils/parseCookies.js';
 import UserModel from '../models/userModel.js';
+import TokenBlacklistModel from '../models/tokenBlacklistModel.js';
 
-export const createToken = (id, username, isAdmin, MAX_AGE) => {
-  const token = jwt.sign({ id, username, isAdmin }, process.env.JWT_SECRET, {
-    expiresIn: MAX_AGE,
-  });
+function parseJwt(token) {
+  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+}
 
-  if (!token) throw new CustomError('Failed to create token', 500);
+export const createToken = async (id, username, MAX_AGE) => {
+  try {
+    const token = jwt.sign({ id, username }, process.env.JWT_SECRET, {
+      expiresIn: MAX_AGE,
+    });
 
-  return token;
+    return { success: true, token };
+  } catch (error) {
+    return { success: false, message: error.message, status: error.status };
+  }
 };
 
 export const loginUser = async (email, password, MAX_AGE) => {
@@ -19,27 +26,42 @@ export const loginUser = async (email, password, MAX_AGE) => {
   try {
     const [rows] = await userModel.findByEmail(email);
 
-    if (rows.length === 0) {
-      throw new CustomError(
-        'Incorrect email or password. Please try again',
-        401
-      );
-    }
+    if (!rows)
+      return {
+        success: false,
+        message: 'Incorrect email or password. Please try again',
+        status: 401,
+      };
 
-    const isPasswordMatch = await bcrypt.compare(password, rows[0].password);
+    const isPasswordMatch = await bcrypt.compare(password, rows.password);
 
-    if (!isPasswordMatch) {
-      throw new CustomError(
-        'Incorrect email or password. Please try again',
-        401
-      );
-    }
+    if (!isPasswordMatch)
+      return {
+        success: false,
+        message: 'Incorrect email or password. Please try again',
+        status: 401,
+      };
 
-    const token = createToken(rows[0].id, rows[0].username, MAX_AGE);
+    const createTokenResult = await createToken(
+      rows.id,
+      rows.username,
+      MAX_AGE
+    );
 
-    return { token, userId: rows[0].id };
+    if (!createTokenResult.success)
+      return {
+        success: false,
+        error: createTokenResult.error,
+        status: createTokenResult.status,
+      };
+
+    return { success: true, token: createTokenResult.token, userId: rows.id };
   } catch (error) {
-    throw new CustomError(error.message, error.status);
+    return {
+      success: false,
+      message: error.message,
+      status: error.status,
+    };
   }
 };
 
@@ -52,9 +74,8 @@ export const signupUser = async (
 ) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  if (!hashedPassword) throw new CustomError('Failed to hash password', 500);
-
-  const userModel = new UserModel();
+  if (!hashedPassword)
+    return { success: false, message: 'Failed to hash password', status: 401 };
 
   const newUser = {
     firstname,
@@ -65,10 +86,34 @@ export const signupUser = async (
   };
 
   try {
-    const result = await userModel.create(newUser);
+    const userModel = new UserModel();
+    const createResult = await userModel.create(newUser);
 
-    return result;
+    return { success: true, createResult };
   } catch (error) {
-    throw new CustomError(error.message, error.status);
+    return {
+      success: false,
+      message: error.message,
+      status: error.status,
+    };
+  }
+};
+
+export const logoutUser = async (cookies) => {
+  try {
+    const parsedCookies = parseCookies(cookies);
+
+    const { exp } = parseJwt(parsedCookies.jwt);
+
+    const tokenBlacklist = new TokenBlacklistModel();
+    await tokenBlacklist.create(parsedCookies.jwt, exp);
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message,
+      status: error.status,
+    };
   }
 };

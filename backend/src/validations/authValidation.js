@@ -31,7 +31,7 @@ export const signupValidation = [
     .custom(async (signingUsername) => {
       const userModel = new UserModel();
       const [rows] = await userModel.findByUsername(signingUsername);
-      if (rows.length > 0)
+      if (rows.length)
         throw Error(
           'This username is already in use, please try another username'
         );
@@ -43,7 +43,7 @@ export const signupValidation = [
     .custom(async (signingEmail) => {
       const userModel = new UserModel();
       const [rows] = await userModel.findByEmail(signingEmail);
-      if (rows.length > 0)
+      if (rows.length)
         Error('This Email is already in use, please try another email');
     }),
   body(
@@ -59,5 +59,4 @@ export const signupValidation = [
     (signingConfirmPassword, { req }) =>
       signingConfirmPassword === req.body.password
   ),
-  
 ];
