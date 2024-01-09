@@ -5,9 +5,8 @@ import parseCookies from '../utils/parseCookies.js';
 import UserModel from '../models/userModel.js';
 import TokenBlacklistModel from '../models/tokenBlacklistModel.js';
 
-function parseJwt(token) {
-  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-}
+const parseJwt = (token) =>
+  JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 
 export const createToken = async (id, username, MAX_AGE) => {
   try {

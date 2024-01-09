@@ -19,6 +19,7 @@ export default async (req, _res, next) => {
     if (isTokenBlacklisted.length) throw new CustomError('Login expired', 401);
 
     const { id } = jwt.verify(parsedCookies.jwt, process.env.JWT_SECRET);
+    
     req.userId = id;
 
     next();
