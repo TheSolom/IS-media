@@ -9,6 +9,12 @@ export async function getUser(req, res, next) {
     if (!userId || typeof userId !== 'number')
       throw new CustomError('No valid user id is provided', 400);
 
+    if (userId !== Number(req.userId))
+      throw new CustomError(
+        'Unauthorized, you can only access your profile',
+        401
+      );
+
     const user = await userService.getUser(userId);
 
     delete user.password;
@@ -21,12 +27,19 @@ export async function getUser(req, res, next) {
 
 export async function updateUser(req, res, next) {
   const { body } = req;
+  
   let { userId } = req.params;
-
   userId = Number(userId);
+
   try {
     if (!userId || typeof userId !== 'number')
       throw new CustomError('No valid user id is provided', 400);
+
+    if (userId !== Number(req.userId))
+      throw new CustomError(
+        'Unauthorized, you can only access your profile',
+        401
+      );
 
     if (Object.keys(body).length === 0)
       throw new CustomError('No data provided', 400);
