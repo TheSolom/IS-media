@@ -6,23 +6,23 @@ export default class UserFollowersModel extends BaseModel {
     super('user_followers');
   }
 
-  async findFollowers(followeeId) {
+  async findFollowers(followeeId, id, limit) {
     const query = `SELECT * FROM ${this.getTableName()} 
-                    JOIN users 
-                    ON users.id = ${this.getTableName()}.userId
-                    WHERE ${this.tableName}.userId = ?`;
+                    WHERE ${this.getTableName()}.userId = ? AND ${this.getTableName()}.id > ?
+                    ORDER BY ${this.getTableName()}.followDate DESC, ${this.getTableName()}.id DESC
+                    limit ${limit}`;
 
-    const result = await connection.execute(query, [followeeId]);
-    return result[0];
+    const result = await connection.execute(query, [followeeId, id]); // Putting limit here made an error -BUG-
+    return result;
   }
 
-  async findFollowees(followerId) {
+  async findFollowees(followerId, id, limit) {
     const query = `SELECT * FROM ${this.getTableName()} 
-                    JOIN users 
-                    ON users.id = ${this.getTableName()}.followerId 
-                    WHERE ${this.getTableName()}.followerId = ?`;
+                    WHERE ${this.getTableName()}.followerId = ? AND ${this.getTableName()}.id > ?
+                    ORDER BY ${this.getTableName()}.followDate DESC, ${this.getTableName()}.id DESC
+                    limit ${limit}`;
 
-    const result = await connection.execute(query, [followerId]);
-    return result[0];
+    const result = await connection.execute(query, [followerId, id]); // Putting limit here made an error -BUG-
+    return result;
   }
 }

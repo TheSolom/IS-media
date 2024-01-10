@@ -11,13 +11,6 @@ export default class BaseModel {
     return this.#tableName;
   }
 
-  async findAll() {
-    const query = `SELECT * FROM ${this.getTableName()}`;
-
-    const result = await connection.execute(query);
-    return result[0];
-  }
-
   async findById(id) {
     const query = `SELECT * FROM ${this.getTableName()} WHERE id = ?`;
 
