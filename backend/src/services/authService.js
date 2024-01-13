@@ -23,7 +23,7 @@ export const createToken = async (id, username, MAX_AGE) => {
 export const loginUser = async (email, password, MAX_AGE) => {
   const userModel = new UserModel();
   try {
-    const [rows] = await userModel.findByEmail(email);
+    const [rows] = await userModel.find({email});
 
     if (!rows)
       return {
@@ -105,7 +105,10 @@ export const logoutUser = async (cookies) => {
     const { exp } = parseJwt(parsedCookies.jwt);
 
     const tokenBlacklist = new TokenBlacklistModel();
-    await tokenBlacklist.create(parsedCookies.jwt, exp);
+    await tokenBlacklist.create({
+      token: parsedCookies.jwt,
+      expiration_timestamp: exp,
+    });
 
     return { success: true };
   } catch (error) {

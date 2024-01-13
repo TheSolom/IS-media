@@ -30,7 +30,7 @@ export const signupValidation = [
     .withMessage('Username must only contain letters and numbers')
     .custom(async (signingUsername) => {
       const userModel = new UserModel();
-      const [rows] = await userModel.findByUsername(signingUsername);
+      const [rows] = await userModel.find({ username: signingUsername });
       if (rows.length)
         throw Error(
           'This username is already in use, please try another username'
@@ -42,7 +42,7 @@ export const signupValidation = [
     .withMessage('Please enter a valid email address')
     .custom(async (signingEmail) => {
       const userModel = new UserModel();
-      const [rows] = await userModel.findByEmail(signingEmail);
+      const [rows] = await userModel.find({ email: signingEmail });
       if (rows.length)
         Error('This Email is already in use, please try another email');
     }),

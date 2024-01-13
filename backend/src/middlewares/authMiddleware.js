@@ -12,14 +12,12 @@ export default async (req, _res, next) => {
     const parsedCookies = parseCookies(cookies);
 
     const tokenBlacklist = new TokenBlacklistModel();
-    const isTokenBlacklisted = await tokenBlacklist.findByToken(
-      parsedCookies.jwt
-    );
+    const isTokenBlacklisted = await tokenBlacklist.find({token: parsedCookies.jwt});
 
     if (isTokenBlacklisted.length) throw new CustomError('Login expired', 401);
 
     const { id } = jwt.verify(parsedCookies.jwt, process.env.JWT_SECRET);
-    
+
     req.userId = id;
 
     next();
