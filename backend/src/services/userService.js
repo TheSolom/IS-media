@@ -5,7 +5,7 @@ import UserFollowersModel from '../models/userFollowersModel.js';
 export const getUser = async (userId) => {
   const userModel = new UserModel();
 
-  const [rows] = await userModel.findById(userId);
+  const [rows] = await userModel.find({ id: userId });
 
   if (!rows) return { success: false, message: 'User not found' };
 
@@ -15,12 +15,12 @@ export const getUser = async (userId) => {
 export const updateUser = async (userId, data) => {
   const userModel = new UserModel();
 
-  const updateResult = await userModel.updateById(userId, data);
+  const updateResult = await userModel.update(data, { id: userId });
 
   if (!updateResult.affectedRows)
     throw new CustomError('No user found with the provided id', 400);
 
-  return updateResult.info;
+  return { success: true };
 };
 
 export const getUserFollowers = async (userId, lastId, limit) => {
@@ -39,4 +39,50 @@ export const getUserFollowers = async (userId, lastId, limit) => {
     lastId: id,
     followers: rows,
   };
+};
+
+export const getUserFollowings = async (userId, lastId, limit) => {
+  const userFollowersModel = new UserFollowersModel();
+
+  const [rows = []] = await userFollowersModel.findFollowees(
+    userId,
+    lastId,
+    limit
+  );
+
+  const id = rows[0] ? rows[0].id : 0;
+
+  return {
+    success: true,
+    lastId: id,
+    followers: rows,
+  };
+};
+
+export const putUserFollow = async (followeeId, followerId) => {
+  const userFollowersModel = new UserFollowersModel();
+
+  const createResult = await userFollowersModel.create({
+    userId: followeeId,
+    followerId,
+  });
+
+  if (!createResult.affectedRows)
+    throw new CustomError('No user found with the provided id', 400);
+
+  return { success: true };
+};
+
+export const deleteUserFollow = async (followeeId, followerId) => {
+  const userFollowersModel = new UserFollowersModel();
+
+  const deleteResult = await userFollowersModel.delete({
+    userId: followeeId,
+    followerId,
+  });
+
+  if (!deleteResult.affectedRows)
+    throw new CustomError('No user found with the provided id', 400);
+
+  return { success: true };
 };

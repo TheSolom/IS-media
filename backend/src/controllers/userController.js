@@ -5,7 +5,8 @@ export async function getUser(req, res, next) {
   const userId = Number(req.params.userId);
 
   try {
-    if (!userId) throw new CustomError('No valid user id is provided', 400);
+    if (!userId || userId < 0)
+      throw new CustomError('No valid user id is provided', 400);
 
     const getUserResult = await userService.getUser(userId);
 
@@ -23,17 +24,8 @@ export async function getUser(req, res, next) {
 
 export async function updateUser(req, res, next) {
   const { body } = req;
-  const userId = Number(req.params.userId);
 
   try {
-    if (!userId) throw new CustomError('No valid user id is provided', 400);
-
-    if (userId !== Number(req.userId))
-      throw new CustomError(
-        'Unauthorized, you can only edit your profile',
-        401
-      );
-
     if (Object.keys(body).length === 0)
       throw new CustomError('No data provided', 400);
 
@@ -56,12 +48,17 @@ export async function updateUser(req, res, next) {
         throw new CustomError('Wrong data provided', 400);
     });
 
-    const info = await userService.updateUser(userId, body);
+    const getupdateUserResult = await userService.updateUser(req.userId, body);
+
+    if (!getupdateUserResult.success)
+      throw new CustomError(
+        getupdateUserResult.message,
+        getupdateUserResult.status
+      );
 
     res.status(201).json({
       success: true,
       message: 'Successfully updated user',
-      info,
     });
   } catch (error) {
     next(error);
@@ -69,15 +66,12 @@ export async function updateUser(req, res, next) {
 }
 
 export async function getUserFollowers(req, res, next) {
-  const userId = Number(req.params.userId);
   const lastId = Number(req.query.lastId) || 0;
   const limit = Number(req.query.limit) || 10;
 
   try {
-    if (!userId) throw new CustomError('No valid user id is provided', 400);
-
     const getUserFollowersResult = await userService.getUserFollowers(
-      userId,
+      req.userId,
       lastId,
       limit
     );
@@ -92,6 +86,95 @@ export async function getUserFollowers(req, res, next) {
       success: true,
       lastId: getUserFollowersResult.lastId,
       followers: getUserFollowersResult.followers,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getUserFollowings(req, res, next) {
+  const lastId = Number(req.query.lastId) || 0;
+  const limit = Number(req.query.limit) || 10;
+
+  try {
+    const getUserFollowingsResult = await userService.getUserFollowings(
+      req.userId,
+      lastId,
+      limit
+    );
+
+    if (!getUserFollowingsResult.success)
+      throw new CustomError(
+        getUserFollowingsResult.message,
+        getUserFollowingsResult.status
+      );
+
+    res.status(200).json({
+      success: true,
+      lastId: getUserFollowingsResult.lastId,
+      followers: getUserFollowingsResult.followers,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function putUserFollow(req, res, next) {
+  const followeeId = Number(req.params.followeeId);
+
+  try {
+    if (!followeeId || followeeId < 0)
+      throw new CustomError('No valid followee id is provided', 400);
+
+    if (req.userId === followeeId)
+      throw new CustomError('You can not follow yourself', 400);
+
+    const putUserFollowResult = await userService.putUserFollow(
+      followeeId,
+      req.userId
+    );
+
+    if (!putUserFollowResult.success) {
+      throw new CustomError(
+        putUserFollowResult.message,
+        putUserFollowResult.status
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Successfully followed user',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteUserFollow(req, res, next) {
+  const followeeId = Number(req.params.followeeId);
+
+  try {
+    if (!followeeId || followeeId < 0)
+      throw new CustomError('No valid followee id is provided', 400);
+
+    if (req.userId === followeeId)
+      throw new CustomError('You can not unfollow yourself', 400);
+
+    const deleteUserFollowResult = await userService.deleteUserFollow(
+      followeeId,
+      req.userId,
+    );
+
+    if (!deleteUserFollowResult.success) {
+      throw new CustomError(
+        deleteUserFollowResult.message,
+        deleteUserFollowResult.status
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Successfully unfollowed user',
     });
   } catch (error) {
     next(error);
