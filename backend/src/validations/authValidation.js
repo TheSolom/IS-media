@@ -44,8 +44,28 @@ export const signupValidation = [
       const userModel = new UserModel();
       const [rows] = await userModel.find({ email: signingEmail });
       if (rows.length)
-        Error('This Email is already in use, please try another email');
+        throw Error('This Email is already in use, please try another email');
     }),
+  body(
+    'password',
+    'Password must be at least 5 characters and contains only numbers and letters without spaces'
+  )
+    .trim()
+    .exists({ values: 'falsy' })
+    .withMessage('You must type a password')
+    .isLength({ min: 5 })
+    .isAlphanumeric(),
+  body('confirmPassword', 'Passwords do not match').custom(
+    (signingConfirmPassword, { req }) =>
+      signingConfirmPassword === req.body.password
+  ),
+];
+
+export const forgotPasswordValidation = [
+  body('email', 'Please enter a valid email address').isEmail(),
+];
+
+export const resetPasswordValidation = [
   body(
     'password',
     'Password must be at least 5 characters and contains only numbers and letters without spaces'

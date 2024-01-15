@@ -4,13 +4,14 @@ import {
   postLogin,
   postSignup,
   postLogout,
-  // postReset,
-  // getNewPassword,
-  // postNewPassword,
+  postForgotPassword,
+  patchResetPassword,
 } from '../controllers/authController.js';
 import {
   loginValidation,
   signupValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation,
 } from '../validations/authValidation.js';
 
 const router = express.Router();
@@ -21,10 +22,12 @@ router.post('/signup', signupValidation, postSignup);
 
 router.post('/logout', postLogout);
 
-// router.post('/reset', postReset);
+router.post('/forgot-password', forgotPasswordValidation, postForgotPassword);
 
-// router.get('/reset/:token', getNewPassword);
-
-// router.post('/new-password', postNewPassword);
+router.patch(
+  '/reset-password/:token',
+  resetPasswordValidation,
+  patchResetPassword
+);
 
 export default router;

@@ -54,6 +54,7 @@ export default class BaseModel {
       });
       whereClause = whereClause.trim().slice(0, -4); // Remove trailing "AND"
     }
+
     const query = `UPDATE ${this.getTableName()} SET ${setClause} ${whereClause}`;
 
     const result = await connection.execute(query);
@@ -69,6 +70,7 @@ export default class BaseModel {
       });
       whereClause = whereClause.trim().slice(0, -4); // Remove trailing "AND"
     }
+
     const query = `DELETE FROM ${this.getTableName()} ${whereClause}`;
 
     const result = await connection.execute(query);

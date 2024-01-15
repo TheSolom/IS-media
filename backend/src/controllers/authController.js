@@ -95,3 +95,72 @@ export async function postLogout(req, res, next) {
     next(error);
   }
 }
+
+export async function postForgotPassword(req, res, next) {
+  const MAX_AGE = 60 * 60 * 1000; // 60 minutes in milliseconds
+  const { email } = req.body;
+
+  const errors = validationResult(req);
+  try {
+    if (!errors.isEmpty()) {
+      throw new CustomError(
+        'Validation failed, form data is incorrect',
+        422,
+        errors.array()[0].msg
+      );
+    }
+
+    const forgotPasswordResult = await authService.forgotPassword(
+      email,
+      MAX_AGE
+    );
+
+    if (!forgotPasswordResult.success)
+      throw new CustomError(
+        forgotPasswordResult.message,
+        forgotPasswordResult.status
+      );
+
+    res.status(201).json({
+      success: true,
+      message: 'Successfully sent password reset link to email',
+      id: forgotPasswordResult.info.messageId,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function patchResetPassword(req, res, next) {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const errors = validationResult(req);
+  try {
+    if (!errors.isEmpty()) {
+      throw new CustomError(
+        'Validation failed, form data is incorrect',
+        422,
+        errors.array()[0].msg
+      );
+    }
+
+    const resetPasswordResult = await authService.resetPassword(
+      token,
+      password,
+    );
+
+    if (!resetPasswordResult.success)
+      throw new CustomError(
+        resetPasswordResult.message,
+        resetPasswordResult.status
+      );
+
+    res.status(200).json({
+      success: true,
+      message: 'Successfully reset password',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
