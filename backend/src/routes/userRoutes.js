@@ -14,9 +14,9 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/:userId', getUser);
+router.get('/:username/profile', getUser);
 
-router.patch('/', updateUser);
+router.patch('/profile', updateUser);
 
 router.get('/followers', getUserFollowers);
 

@@ -2,13 +2,12 @@ import CustomError from '../utils/errorHandling.js';
 import * as userService from '../services/userService.js';
 
 export async function getUser(req, res, next) {
-  const userId = Number(req.params.userId);
+  const { username } = req.params;
 
   try {
-    if (!userId || userId < 0)
-      throw new CustomError('No valid user id is provided', 400);
+    if (!username) throw new CustomError('No valid username is provided', 400);
 
-    const getUserResult = await userService.getUser(userId);
+    const getUserResult = await userService.getUser(username);
 
     if (!getUserResult.success)
       throw new CustomError(getUserResult.message, 404);
@@ -162,7 +161,7 @@ export async function deleteUserFollow(req, res, next) {
 
     const deleteUserFollowResult = await userService.deleteUserFollow(
       followeeId,
-      req.userId,
+      req.userId
     );
 
     if (!deleteUserFollowResult.success) {
