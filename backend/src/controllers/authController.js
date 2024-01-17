@@ -148,6 +148,7 @@ export async function patchResetPassword(req, res, next) {
     const resetPasswordResult = await authService.resetPassword(
       token,
       password,
+      req.userId
     );
 
     if (!resetPasswordResult.success)

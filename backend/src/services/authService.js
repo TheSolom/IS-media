@@ -170,23 +170,14 @@ export const forgotPassword = async (email, MAX_AGE) => {
   }
 };
 
-export const resetPassword = async (token, password) => {
+export const resetPassword = async (token, password, userId) => {
   const tokenModel = new TokenModel();
   const userModel = new UserModel();
 
   try {
     const [tokenRow] = await tokenModel.find({ token });
 
-    if (!tokenRow)
-      return {
-        success: false,
-        message: 'Invalid or expired token. Please try again',
-        status: 401,
-      };
-
-    const [userRow] = await userModel.find({ email: tokenRow.email });
-
-    if (!userRow)
+    if (!tokenRow || tokenRow.user_id !== userId)
       return {
         success: false,
         message: 'Invalid or expired token. Please try again',
@@ -204,7 +195,7 @@ export const resetPassword = async (token, password) => {
 
     const updateResult = await userModel.update(
       { password: hashedPassword },
-      { email: userRow.email }
+      { id: userId }
     );
 
     if (!updateResult.affectedRows)
