@@ -9,14 +9,15 @@ import {
   putUserFollow,
   deleteUserFollow,
 } from '../controllers/userController.js';
+import updateUserValidation from '../validations/userValidation.js';
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/:username/profile', getUser);
+router.get('/profile/:username', getUser);
 
-router.patch('/profile', updateUser);
+router.patch('/profile', updateUserValidation, updateUser);
 
 router.get('/followers', getUserFollowers);
 

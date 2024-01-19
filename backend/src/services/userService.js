@@ -1,3 +1,5 @@
+import bcrypt from 'bcrypt';
+
 import UserModel from '../models/userModel.js';
 import UserFollowersModel from '../models/userFollowersModel.js';
 
@@ -12,9 +14,22 @@ export const getUser = async (username) => {
 };
 
 export const updateUser = async (userId, data) => {
+  const updatedData = { ...data };
+
+  if (updatedData.password) {
+    updatedData.password = await bcrypt.hash(updatedData.password, 10);
+
+    if (!updatedData.password)
+      return {
+        success: false,
+        message: 'Failed to hash password',
+        status: 500,
+      };
+  }
+
   const userModel = new UserModel();
 
-  const updateResult = await userModel.update(data, { id: userId });
+  const updateResult = await userModel.update(updatedData, { id: userId });
 
   if (!updateResult.affectedRows)
     return {

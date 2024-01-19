@@ -1,3 +1,5 @@
+import { validationResult } from 'express-validator';
+
 import CustomError from '../utils/errorHandling.js';
 import * as userService from '../services/userService.js';
 
@@ -24,28 +26,15 @@ export async function getUser(req, res, next) {
 export async function updateUser(req, res, next) {
   const { body } = req;
 
+  const errors = validationResult(req);
   try {
-    if (Object.keys(body).length === 0)
-      throw new CustomError('No data provided', 400);
-
-    const allowedProperties = [
-      'firstname',
-      'lastname',
-      'username',
-      'email',
-      'password',
-      'about',
-      'profilePicture',
-      'coverPicture',
-      'country',
-      'livesIn',
-      'relationship',
-    ];
-
-    Object.keys(body).forEach((key) => {
-      if (!allowedProperties.includes(key))
-        throw new CustomError('Wrong data provided', 400);
-    });
+    if (!errors.isEmpty()) {
+      throw new CustomError(
+        'Validation failed, updating data is incorrect',
+        422,
+        errors.array()[0].msg
+      );
+    }
 
     const getupdateUserResult = await userService.updateUser(req.userId, body);
 
