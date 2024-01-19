@@ -5,7 +5,7 @@ import * as authService from '../services/authService.js';
 
 export async function postLogin(req, res, next) {
   const MAX_AGE = 3 * 24 * 60 * 60; // 3 days in seconds
-  const { email, password } = req.body;
+  const { emailOrUsername, password } = req.body;
 
   const errors = validationResult(req);
   try {
@@ -17,7 +17,11 @@ export async function postLogin(req, res, next) {
       );
     }
 
-    const loginResult = await authService.loginUser(email, password, MAX_AGE);
+    const loginResult = await authService.loginUser(
+      emailOrUsername,
+      password,
+      MAX_AGE
+    );
 
     if (!loginResult.success)
       throw new CustomError(loginResult.message, loginResult.status);
@@ -39,7 +43,8 @@ export async function postLogin(req, res, next) {
 }
 
 export async function postSignup(req, res, next) {
-  const { firstname, lastname, username, email, password } = req.body;
+  const { firstname, lastname, username, email, password, birthDate, gender } =
+    req.body;
 
   const errors = validationResult(req);
   try {
@@ -56,7 +61,9 @@ export async function postSignup(req, res, next) {
       lastname,
       username,
       email,
-      password
+      password,
+      birthDate,
+      gender
     );
 
     if (!signupResult.success)
@@ -98,7 +105,7 @@ export async function postLogout(req, res, next) {
 
 export async function postForgotPassword(req, res, next) {
   const MAX_AGE = 60 * 60 * 1000; // 60 minutes in milliseconds
-  const { email } = req.body;
+  const { emailOrUsername } = req.body;
 
   const errors = validationResult(req);
   try {
@@ -111,7 +118,7 @@ export async function postForgotPassword(req, res, next) {
     }
 
     const forgotPasswordResult = await authService.forgotPassword(
-      email,
+      emailOrUsername,
       MAX_AGE
     );
 
@@ -147,8 +154,7 @@ export async function patchResetPassword(req, res, next) {
 
     const resetPasswordResult = await authService.resetPassword(
       token,
-      password,
-      req.userId
+      password
     );
 
     if (!resetPasswordResult.success)

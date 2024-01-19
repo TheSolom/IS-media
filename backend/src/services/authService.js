@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
+import isEmail from 'validator/lib/isEmail.js';
 
 import * as parseUtil from '../utils/parseUtil.js';
 import UserModel from '../models/userModel.js';
@@ -20,20 +21,27 @@ const createToken = async (id, username, MAX_AGE) => {
   }
 };
 
-export const loginUser = async (email, password, MAX_AGE) => {
+export const loginUser = async (emailOrUsername, password, MAX_AGE) => {
   const userModel = new UserModel();
 
+  let userRow;
   try {
-    const [rows] = await userModel.find({ email });
+    if (isEmail(emailOrUsername)) {
+      const email = emailOrUsername;
+      [userRow] = await userModel.find({ email });
+    } else {
+      const username = emailOrUsername;
+      [userRow] = await userModel.find({ username });
+    }
 
-    if (!rows)
+    if (!userRow)
       return {
         success: false,
         message: 'Incorrect email or password. Please try again',
         status: 401,
       };
 
-    const isPasswordMatch = await bcrypt.compare(password, rows.password);
+    const isPasswordMatch = await bcrypt.compare(password, userRow.password);
 
     if (!isPasswordMatch)
       return {
@@ -43,8 +51,8 @@ export const loginUser = async (email, password, MAX_AGE) => {
       };
 
     const createTokenResult = await createToken(
-      rows.id,
-      rows.username,
+      userRow.id,
+      userRow.username,
       MAX_AGE
     );
 
@@ -55,7 +63,13 @@ export const loginUser = async (email, password, MAX_AGE) => {
         status: createTokenResult.status,
       };
 
-    return { success: true, token: createTokenResult.token, userId: rows.id };
+    await userModel.update({ is_active: 1 }, { id: userRow.id });
+
+    return {
+      success: true,
+      token: createTokenResult.token,
+      userId: userRow.id,
+    };
   } catch (error) {
     return {
       success: false,
@@ -70,12 +84,14 @@ export const signupUser = async (
   lastname,
   username,
   email,
-  password
+  password,
+  birthDate,
+  gender
 ) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   if (!hashedPassword)
-    return { success: false, message: 'Failed to hash password', status: 401 };
+    return { success: false, message: 'Failed to hash password', status: 500 };
 
   const newUser = {
     firstname,
@@ -83,6 +99,8 @@ export const signupUser = async (
     username,
     email,
     password: hashedPassword,
+    birth_date: birthDate,
+    gender,
   };
 
   const userModel = new UserModel();
@@ -102,16 +120,19 @@ export const signupUser = async (
 
 export const logoutUser = async (cookies) => {
   const tokenBlacklist = new TokenBlacklistModel();
+  const userModel = new UserModel();
 
   try {
     const parsedCookies = parseUtil.parseCookies(cookies);
 
-    const { exp } = parseUtil.parseJwt(parsedCookies.jwt);
+    const { id, exp } = parseUtil.parseJwt(parsedCookies.jwt);
 
     await tokenBlacklist.create({
       token: parsedCookies.jwt,
-      expirationDate: exp,
+      expiration_date: new Date(exp),
     });
+
+    await userModel.update({ is_active: 0 }, { id });
 
     return { success: true };
   } catch (error) {
@@ -123,14 +144,21 @@ export const logoutUser = async (cookies) => {
   }
 };
 
-export const forgotPassword = async (email, MAX_AGE) => {
+export const forgotPassword = async (emailOrUsername, MAX_AGE) => {
   const userModel = new UserModel();
   const tokenModel = new TokenModel();
 
+  let userRow;
   try {
-    const [rows] = await userModel.find({ email });
+    if (isEmail(emailOrUsername)) {
+      const email = emailOrUsername;
+      [userRow] = await userModel.find({ email });
+    } else {
+      const username = emailOrUsername;
+      [userRow] = await userModel.find({ username });
+    }
 
-    if (!rows)
+    if (!userRow)
       return {
         success: false,
         message: 'Incorrect email. Please try again',
@@ -140,9 +168,9 @@ export const forgotPassword = async (email, MAX_AGE) => {
     const token = crypto.randomBytes(32).toString('hex');
 
     await tokenModel.create({
+      user_id: userRow.id,
       token,
-      email,
-      expirationDate: new Date(Date.now() + MAX_AGE),
+      expiration_date: new Date(Date.now() + MAX_AGE),
     });
 
     const resetUrl = `http://localhost:5000/reset-password/${token}`;
@@ -170,14 +198,14 @@ export const forgotPassword = async (email, MAX_AGE) => {
   }
 };
 
-export const resetPassword = async (token, password, userId) => {
+export const resetPassword = async (token, password) => {
   const tokenModel = new TokenModel();
   const userModel = new UserModel();
 
   try {
     const [tokenRow] = await tokenModel.find({ token });
 
-    if (!tokenRow || tokenRow.user_id !== userId)
+    if (!tokenRow)
       return {
         success: false,
         message: 'Invalid or expired token. Please try again',
@@ -195,7 +223,7 @@ export const resetPassword = async (token, password, userId) => {
 
     const updateResult = await userModel.update(
       { password: hashedPassword },
-      { id: userId }
+      { id: tokenRow.user_id }
     );
 
     if (!updateResult.affectedRows)
