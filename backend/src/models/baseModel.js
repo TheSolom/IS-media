@@ -1,79 +1,67 @@
 import connection from '../configs/database.js';
 
 export default class BaseModel {
-  #tableName;
+    #tableName;
 
-  constructor(tableName) {
-    this.#tableName = tableName;
-  }
-
-  getTableName() {
-    return this.#tableName;
-  }
-
-  async find(conditions) {
-    let whereClause = '';
-    if (conditions) {
-      whereClause = 'WHERE ';
-      Object.entries(conditions).forEach(([key, value]) => {
-        whereClause += `${key} = ${connection.escape(value)} AND `;
-      });
-      whereClause = whereClause.trim().slice(0, -4); // Remove trailing "AND" if any
+    constructor(tableName) {
+        this.#tableName = tableName;
     }
 
-    const query = `SELECT * FROM ${this.getTableName()} ${whereClause}`;
-
-    const result = await connection.execute(query);
-    return result[0];
-  }
-
-  async create(data) {
-    const columns = Object.keys(data)
-      .map((key) => `\`${key}\``)
-      .join(', ');
-    const values = Object.values(data)
-      .map(() => '?')
-      .join(', ');
-
-    const query = `INSERT INTO ${this.getTableName()} (${columns}) VALUES (${values})`;
-
-    const result = await connection.execute(query, Object.values(data));
-    return result[0];
-  }
-
-  async update(data, conditions) {
-    const setClause = Object.entries(data)
-      .map(([key, value]) => `${key} = ${connection.escape(value)}`)
-      .join(', ');
-
-    let whereClause = '';
-    if (conditions) {
-      whereClause = 'WHERE ';
-      Object.entries(conditions).forEach(([key, value]) => {
-        whereClause += `${key} = ${connection.escape(value)} AND `;
-      });
-      whereClause = whereClause.trim().slice(0, -4); // Remove trailing "AND"
+    getTableName() {
+        return this.#tableName;
     }
 
-    const query = `UPDATE ${this.getTableName()} SET ${setClause} ${whereClause}`;
+    async find(conditions) {
+        const values = [];
+        const clauses = [];
+        let query = `SELECT * FROM ${this.getTableName()} `;
 
-    const result = await connection.execute(query);
-    return result[0];
-  }
+        if (conditions) {
+            Object.entries(conditions).forEach(([key, value]) => {
+                clauses.push(`${key} = ?`);
+                values.push(value);
+            });
+            query += `WHERE ${clauses.join(' AND ')}`;
+        }
 
-  async delete(conditions) {
-    let whereClause = '';
-    if (conditions) {
-      whereClause = 'WHERE ';
-      Object.entries(conditions).forEach(([key, value]) => {
-        whereClause += `${key} = ${connection.escape(value)} AND `;
-      });
-      whereClause = whereClause.trim().slice(0, -4); // Remove trailing "AND"
+        const result = await connection.execute(query, values);
+        return result;
     }
 
-    const query = `DELETE FROM ${this.getTableName()} ${whereClause}`;
+    async create(data) {
+        const keys = Object.keys(data);
 
-    const result = await connection.execute(query);
-    return result[0];
-  }
+        const query = `INSERT INTO ${this.getTableName()} (${keys.join(', ')}) VALUES (:${keys.join(', :')})`;
+
+        const result = await connection.execute(query, data);
+        return result[0];
+    }
+
+    async update(data, conditions) {
+        const setClause = Object.entries(data)
+            .map(([key]) => `${key} = ?`)
+            .join(', ');
+
+        let whereClause = '';
+        const values = [];
+        if (conditions) {
+            whereClause = 'WHERE ';
+            Object.entries(conditions).forEach(([key, value]) => {
+                whereClause += `${key} = ? AND `;
+                values.push(value);
+            });
+            whereClause = whereClause.trim().slice(0, -4); // Remove trailing "AND"
+        }
+
+        const query = `UPDATE ${this.getTableName()} SET ${setClause} ${whereClause}`;
+
+        const result = await connection.execute(query, [...Object.values(data), ...values]);
+        return result[0];
+    }
+
+    async delete(conditions) {
+        const query = `DELETE FROM ${this.getTableName()} ${conditions ? 'WHERE ?' : ''}`;
+        const result = await connection.execute(query, conditions);
+        return result[0];
+    }
 }
