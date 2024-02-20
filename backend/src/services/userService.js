@@ -2,113 +2,241 @@ import bcrypt from 'bcrypt';
 
 import UserModel from '../models/userModel.js';
 import UserFollowersModel from '../models/userFollowersModel.js';
+import UserBlocksModel from '../models/userBlocksModel.js';
 
-export const getUser = async (username) => {
-  const userModel = new UserModel();
+export const getUser = async (userId) => {
+    const userModel = new UserModel();
 
-  const [userRow] = await userModel.find({ username });
+    try {
+        const [userRow] = await userModel.find({ id: userId });
 
-  if (!userRow) return { success: false, message: 'User not found' };
+        if (!userRow.length)
+            return {
+                success: false,
+                message: `No user found with provided id '${userId}' `,
+                status: 404,
+            };
 
-  return { success: true, user: userRow };
+        delete userRow[0].password;
+
+        const date = new Date(userRow[0].birth_date);
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        const datePart = date.toISOString().split('T')[0];
+        userRow[0].birth_date = datePart;
+
+        return { success: true, user: userRow[0] };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while fetching the user',
+            status: 500,
+        };
+    }
 };
 
 export const updateUser = async (userId, data) => {
-  const updatedData = { ...data };
+    const updatedData = { ...data };
 
-  if (updatedData.password) {
-    updatedData.password = await bcrypt.hash(updatedData.password, 10);
+    if (updatedData.password) {
+        try {
+            updatedData.password = await bcrypt.hash(updatedData.password, 10);
+        } catch (error) {
+            console.error(error);
+            return {
+                success: false,
+                message: 'Failed to hash password',
+                status: 500,
+            };
+        }
+    }
 
-    if (!updatedData.password)
-      return {
-        success: false,
-        message: 'Failed to hash password',
-        status: 500,
-      };
-  }
+    const userModel = new UserModel();
 
-  const userModel = new UserModel();
+    try {
+        const updateResult = await userModel.update(updatedData, { id: userId });
 
-  const updateResult = await userModel.update(updatedData, { id: userId });
+        if (!updateResult.affectedRows) {
+            return {
+                success: false,
+                message: 'Failed to update the user',
+                status: 500,
+            };
+        }
 
-  if (!updateResult.affectedRows)
-    return {
-      success: false,
-      message: 'No user found with the provided id',
-      status: 400,
-    };
-
-  return { success: true };
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while updating the user',
+            status: 500,
+        };
+    }
 };
 
 export const getUserFollowers = async (userId, lastId, limit) => {
-  const userFollowersModel = new UserFollowersModel();
+    const userFollowersModel = new UserFollowersModel();
 
-  const [followersRows = []] = await userFollowersModel.findFollowers(
-    userId,
-    lastId,
-    limit
-  );
+    try {
+        const [followersRows] = await userFollowersModel.findFollowers(userId, lastId, limit);
 
-  const id = followersRows[0] ? followersRows[0].id : 0;
+        const id = followersRows[0] ? followersRows[0].id : 0;
 
-  return {
-    success: true,
-    lastId: id,
-    followers: followersRows,
-  };
+        return {
+            success: true,
+            lastId: id,
+            followers: followersRows,
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while fetching the followers',
+            status: 500,
+        };
+    }
 };
 
 export const getUserFollowings = async (userId, lastId, limit) => {
-  const userFollowersModel = new UserFollowersModel();
+    const userFollowersModel = new UserFollowersModel();
 
-  const [followeesRows = []] = await userFollowersModel.findFollowees(
-    userId,
-    lastId,
-    limit
-  );
+    try {
+        const [followeesRows] = await userFollowersModel.findFollowees(userId, lastId, limit);
 
-  const id = followeesRows[0] ? followeesRows[0].id : 0;
+        const id = followeesRows[0] ? followeesRows[0].id : 0;
 
-  return {
-    success: true,
-    lastId: id,
-    followers: followeesRows,
-  };
+        return {
+            success: true,
+            lastId: id,
+            followers: followeesRows,
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while fetching the followings',
+            status: 500,
+        };
+    }
 };
 
-export const putUserFollow = async (followeeId, followerId) => {
-  const userFollowersModel = new UserFollowersModel();
+export const postUserFollow = async (followeeId, followerId) => {
+    const userFollowersModel = new UserFollowersModel();
 
-  const createResult = await userFollowersModel.create({
-    userId: followeeId,
-    followerId,
-  });
+    try {
+        const createResult = await userFollowersModel.create({ userId: followeeId, followerId });
 
-  if (!createResult.affectedRows)
-    return {
-      success: false,
-      message: 'No user found with the provided id',
-      status: 400,
-    };
+        if (!createResult.affectedRows)
+            return {
+                success: false,
+                message: `Failed to follow the user with provided id '${followeeId}' `,
+                status: 500,
+            };
 
-  return { success: true };
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while following the user',
+            status: 500,
+        };
+    }
 };
 
 export const deleteUserFollow = async (followeeId, followerId) => {
-  const userFollowersModel = new UserFollowersModel();
+    const userFollowersModel = new UserFollowersModel();
 
-  const deleteResult = await userFollowersModel.delete({
-    userId: followeeId,
-    followerId,
-  });
+    try {
+        const deleteResult = await userFollowersModel.delete({ userId: followeeId, followerId });
 
-  if (!deleteResult.affectedRows)
-    return {
-      success: false,
-      message: 'No user found with the provided id',
-      status: 400,
-    };
+        if (!deleteResult.affectedRows)
+            return {
+                success: false,
+                message: `No user found with provided id '${followeeId}' `,
+                status: 404,
+            };
 
-  return { success: true };
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while unfollowing the user',
+            status: 500,
+        };
+    }
+};
+
+export const getUserBlocks = async (userId, lastId, limit) => {
+    const userBlocksModel = new UserBlocksModel();
+
+    try {
+        const [blocksRows] = await userBlocksModel.findBlocks(userId, lastId, limit);
+
+        const id = blocksRows[0] ? blocksRows[0].id : 0;
+
+        return {
+            success: true,
+            lastId: id,
+            blocks: blocksRows,
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while fetching user blocks',
+            status: 500,
+        };
+    }
+};
+
+export const postUserBlock = async (blockedId, blockerId) => {
+    const userBlocksModel = new UserBlocksModel();
+
+    try {
+        const createResult = await userBlocksModel.create({ userId: blockedId, blockerId });
+
+        if (!createResult.affectedRows)
+            return {
+                success: false,
+                message: `No user found with provided id '${blockedId}' `,
+                status: 404,
+            };
+
+        return { success: true };
+
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while blocking the user',
+            status: 500,
+        };
+    }
+};
+
+export const deleteUserBlock = async (blockedId, blockerId) => {
+    const userBlocksModel = new UserBlocksModel();
+
+    try {
+        const deleteResult = await userBlocksModel.delete({ userId: blockedId, blockerId });
+
+        if (!deleteResult.affectedRows)
+            return {
+                success: false,
+                message: `No user found with provided id '${blockedId}' `,
+                status: 404,
+            };
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while unblocking the user',
+            status: 500,
+        };
+    }
 };
