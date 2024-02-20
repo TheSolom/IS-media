@@ -5,9 +5,12 @@ import { dirname, join } from 'node:path';
 import { Server } from 'socket.io';
 import cors from 'cors';
 
-import errorHandlerMiddleware from './middlewares/errorHandlerMiddleware.js';
+import errorMiddleware from './middlewares/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import postRoutes from './routes/postRoutes.js';
+import storyRoutes from './routes/storyRoutes.js';
 
 const app = express();
 const server = createServer(app);
@@ -18,14 +21,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 app.set('view engine', 'ejs');
 app.set('views', join(__dirname, 'views'));
 
-app.use(express.urlencoded({ extended: true }));
 app.use(express.static(join(__dirname, 'public')));
-app.use(express.json());
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '10mb' }));
 
-app.use(cors({ credentials: true }));
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
-app.use(authRoutes);
-app.use('/user', userRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/chats', chatRoutes);
+app.use('/api/v1/posts', postRoutes);
+app.use('/api/v1/stories', storyRoutes);
 
 io.on('connection', (socket) => {
   console.log('a user connected');
@@ -39,7 +45,7 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log('user disconnected'));
 });
 
-app.use(errorHandlerMiddleware);
+app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Running on http://localhost:${PORT}`));
