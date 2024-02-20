@@ -5,23 +5,28 @@ import * as parseUtil from '../utils/parseUtil.js';
 import TokenBlacklistModel from '../models/tokenBlacklistModel.js';
 
 export default async (req, _res, next) => {
-  try {
-    const cookies = req.headers.cookie;
-    if (!cookies) throw new CustomError('You must be logged in', 401);
+    try {
+        const { cookie } = req.headers;
 
-    const parsedCookies = parseUtil.parseCookies(cookies);
+        if (!cookie)
+            throw new CustomError('You must be logged in', 401);
 
-    const tokenBlacklist = new TokenBlacklistModel();
-    const isTokenBlacklisted = await tokenBlacklist.find({token: parsedCookies.jwt});
+        const parsedCookies = parseUtil.parseCookies(cookie);
 
-    if (isTokenBlacklisted.length) throw new CustomError('Login expired', 401);
+        const tokenBlacklist = new TokenBlacklistModel();
 
-    const { id } = jwt.verify(parsedCookies.jwt, process.env.JWT_SECRET);
+        const [TokenBlacklisted] = await tokenBlacklist.find({ token: parsedCookies.jwt });
 
-    req.userId = id;
+        if (TokenBlacklisted.length)
+            throw new CustomError('Login expired', 401);
 
-    next();
-  } catch (error) {
-    next(error);
-  }
+        const { id } = jwt.verify(parsedCookies.jwt, process.env.JWT_SECRET);
+
+        req.userId = id;
+
+        next();
+    } catch (error) {
+        console.error(error);
+        next(error.status === 401 ? error : new CustomError('Something went wrong while authenticating', 500));
+    }
 };
