@@ -60,7 +60,7 @@ export const signupValidation = [
       const userModel = new UserModel();
       const [userRow] = await userModel.find({ username: signingUsername });
 
-      if (userRow)
+      if (userRow.length)
         throw Error(
           'This username is already in use, please try another username'
         );
@@ -73,7 +73,7 @@ export const signupValidation = [
       const userModel = new UserModel();
       const [userRow] = await userModel.find({ email: signingEmail });
 
-      if (userRow)
+      if (userRow.length)
         throw Error('This Email is already in use, please try another email');
     }),
   body('password')
@@ -97,17 +97,18 @@ export const signupValidation = [
     .notEmpty()
     .withMessage('Birth date is required')
     .isISO8601()
-    .withMessage('Birth date must be a valid date')
+    .withMessage('Birth date must be a valid yyyy-mm-dd date')
     .custom((signingBirthDate) => {
       const age = Math.floor(
         (new Date() - new Date(signingBirthDate)) / (1000 * 60 * 60 * 24 * 365) // convert ms to years
       );
       return age >= 13;
-    }),
+    })
+    .withMessage('You must be at least 13 years old'),
   body('gender')
     .trim()
-    .isIn(['male', 'female', 'not specified'])
-    .withMessage('Gender must be male, female or not specified'),
+    .isIn(['male', 'female'])
+    .withMessage('Gender must be male or female'),
 ];
 
 export const forgotPasswordValidation = [

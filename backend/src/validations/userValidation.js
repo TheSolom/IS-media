@@ -24,7 +24,7 @@ const updateUserValidation = [
       const userModel = new UserModel();
       const [userRow] = await userModel.find({ username: signingUsername });
 
-      if (userRow)
+      if (userRow.length)
         throw Error(
           'This username is already in use, please try another username'
         );
@@ -38,7 +38,7 @@ const updateUserValidation = [
       const userModel = new UserModel();
       const [userRow] = await userModel.find({ email: signingEmail });
 
-      if (userRow)
+      if (userRow.length)
         throw Error('This Email is already in use, please try another email');
     }),
   body('password')
@@ -55,12 +55,12 @@ const updateUserValidation = [
     .notEmpty()
     .withMessage('Birth date is required')
     .isISO8601()
-    .withMessage('Birth date must be a valid date'),
+    .withMessage('Birth date must be a valid yyyy-mm-dd date'),
   body('gender')
     .optional()
     .trim()
-    .isIn(['male', 'female', 'not specified'])
-    .withMessage('Gender must be male, female or not specified'),
+    .isIn(['male', 'female'])
+    .withMessage('Gender must be male or female'),
   body('about')
     .optional()
     .trim()
