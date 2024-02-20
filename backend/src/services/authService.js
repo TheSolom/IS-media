@@ -9,238 +9,329 @@ import TokenBlacklistModel from '../models/tokenBlacklistModel.js';
 import TokenModel from '../models/tokenModel.js';
 import transporter from '../configs/transporter.js';
 
-const createToken = async (id, username, MAX_AGE) => {
-  try {
-    const token = jwt.sign({ id, username }, process.env.JWT_SECRET, {
-      expiresIn: MAX_AGE,
-    });
+const createToken = (id, username, MAX_AGE) => {
+    try {
+        const token = jwt.sign({ id, username }, process.env.JWT_SECRET, {
+            expiresIn: MAX_AGE,
+        });
 
-    return { success: true, token };
-  } catch (error) {
-    return { success: false, message: error.message, status: error.status };
-  }
+        return { success: true, token };
+    } catch (error) {
+        console.error(error);
+        return { success: false };
+    }
 };
 
 export const loginUser = async (emailOrUsername, password, MAX_AGE) => {
-  const userModel = new UserModel();
+    const userModel = new UserModel();
 
-  let userRow;
-  try {
-    if (isEmail(emailOrUsername)) {
-      const email = emailOrUsername;
-      [userRow] = await userModel.find({ email });
-    } else {
-      const username = emailOrUsername;
-      [userRow] = await userModel.find({ username });
+    let userRow;
+    try {
+        if (isEmail(emailOrUsername)) {
+            const email = emailOrUsername;
+            [userRow] = await userModel.find({ email });
+        } else {
+            const username = emailOrUsername;
+            [userRow] = await userModel.find({ username });
+        }
+
+        if (!userRow.length)
+            return {
+                success: false,
+                message: 'Incorrect email or password. Please try again',
+                status: 401,
+            };
+
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while logging in the user',
+            status: 500,
+        };
     }
 
-    if (!userRow)
-      return {
-        success: false,
-        message: 'Incorrect email or password. Please try again',
-        status: 401,
-      };
+    try {
+        const isPasswordMatch = await bcrypt.compare(password, userRow[0].password);
 
-    const isPasswordMatch = await bcrypt.compare(password, userRow.password);
+        if (!isPasswordMatch)
+            return {
+                success: false,
+                message: 'Incorrect email or password. Please try again',
+                status: 401,
+            };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while logging in the user',
+            status: 500,
+        };
+    }
 
-    if (!isPasswordMatch)
-      return {
-        success: false,
-        message: 'Incorrect email or password. Please try again',
-        status: 401,
-      };
-
-    const createTokenResult = await createToken(
-      userRow.id,
-      userRow.username,
-      MAX_AGE
+    const createTokenResult = createToken(
+        userRow[0].id,
+        userRow[0].username,
+        MAX_AGE
     );
 
     if (!createTokenResult.success)
-      return {
-        success: false,
-        error: createTokenResult.error,
-        status: createTokenResult.status,
-      };
+        return {
+            success: false,
+            message: 'An error occurred while logging in the user',
+            status: 500,
+        };
 
-    await userModel.update({ is_active: 1 }, { id: userRow.id });
+    try {
+        await userModel.update({ is_active: 1 }, { id: userRow[0].id });
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while logging in the user',
+            status: 500,
+        };
+    }
 
     return {
-      success: true,
-      token: createTokenResult.token,
-      userId: userRow.id,
+        success: true,
+        token: createTokenResult.token,
+        userId: userRow[0].id,
     };
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-      status: error.status,
-    };
-  }
 };
 
 export const signupUser = async (
-  firstname,
-  lastname,
-  username,
-  email,
-  password,
-  birthDate,
-  gender
-) => {
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  if (!hashedPassword)
-    return { success: false, message: 'Failed to hash password', status: 500 };
-
-  const newUser = {
     firstname,
     lastname,
     username,
     email,
-    password: hashedPassword,
-    birth_date: birthDate,
-    gender,
-  };
+    password,
+    birthDate,
+    gender
+) => {
+    let hashedPassword;
+    try {
+        hashedPassword = await bcrypt.hash(password, 10);
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while signing up the user',
+            status: 500,
+        };
+    }
 
-  const userModel = new UserModel();
-
-  try {
-    const createResult = await userModel.create(newUser);
-
-    return { success: true, createResult };
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-      status: error.status,
+    const newUser = {
+        firstname,
+        lastname,
+        username,
+        email,
+        password: hashedPassword,
+        birth_date: birthDate,
+        gender,
     };
-  }
+
+    const userModel = new UserModel();
+
+    try {
+        const createResult = await userModel.create(newUser);
+
+        return { success: true, createResult };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while signing up the user',
+            status: 500,
+        };
+    }
 };
 
 export const logoutUser = async (cookies) => {
-  const tokenBlacklist = new TokenBlacklistModel();
-  const userModel = new UserModel();
-
-  try {
     const parsedCookies = parseUtil.parseCookies(cookies);
 
     const { id, exp } = parseUtil.parseJwt(parsedCookies.jwt);
 
-    await tokenBlacklist.create({
-      token: parsedCookies.jwt,
-      expiration_date: new Date(exp),
-    });
+    const tokenBlacklist = new TokenBlacklistModel();
+    try {
+        await tokenBlacklist.create({
+            token: parsedCookies.jwt,
+            expiration_date: new Date(exp),
+        });
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while logging out the user',
+            status: 500,
+        };
+    }
 
-    await userModel.update({ is_active: 0 }, { id });
+    const userModel = new UserModel();
 
-    return { success: true };
-  } catch (error) {
+    try {
+        await userModel.update({ is_active: 0 }, { id });
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while logging out the user',
+            status: 500,
+        };
+    }
+
     return {
-      success: false,
-      message: error.message,
-      status: error.status,
+        success: true,
+        message: 'User logged out successfully',
+        status: 200
     };
-  }
 };
 
 export const forgotPassword = async (emailOrUsername, MAX_AGE) => {
-  const userModel = new UserModel();
-  const tokenModel = new TokenModel();
+    const userModel = new UserModel();
 
-  let userRow;
-  try {
-    if (isEmail(emailOrUsername)) {
-      const email = emailOrUsername;
-      [userRow] = await userModel.find({ email });
-    } else {
-      const username = emailOrUsername;
-      [userRow] = await userModel.find({ username });
+    let userRow;
+    try {
+        if (isEmail(emailOrUsername)) {
+            const email = emailOrUsername;
+            [userRow] = await userModel.find({ email });
+        } else {
+            const username = emailOrUsername;
+            [userRow] = await userModel.find({ username });
+        }
+
+        if (!userRow.length)
+            return {
+                success: false,
+                message: 'Incorrect email. Please try again',
+                status: 422,
+            };
+
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while verifying the user',
+            status: 500,
+        };
     }
-
-    if (!userRow)
-      return {
-        success: false,
-        message: 'Incorrect email. Please try again',
-        status: 422,
-      };
 
     const token = crypto.randomBytes(32).toString('hex');
 
-    await tokenModel.create({
-      user_id: userRow.id,
-      token,
-      expiration_date: new Date(Date.now() + MAX_AGE),
-    });
+    const tokenModel = new TokenModel();
+
+    try {
+        await tokenModel.create({
+            user_id: userRow[0].id,
+            token,
+            expiration_date: new Date(Date.now() + MAX_AGE),
+        });
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while resetting the password',
+            status: 500,
+        };
+    }
 
     const resetUrl = `http://localhost:5000/reset-password/${token}`;
 
     const mailOptions = {
-      from: 'onboarding@resend.dev',
-      to: 'eslam.01212@gmail.com',
-      subject: 'ES Media Password reset',
-      text: `You requested a password reset.
+        from: 'onboarding@resend.dev',
+        to: 'eslam.01212@gmail.com',
+        subject: 'ES Media Password reset',
+        text: `You requested a password reset.
 
       For reseting your password please click on the link below: 
       ${resetUrl} 
       If you did not request a password reset, please ignore this email.`,
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    try {
+        const info = await transporter.sendMail(mailOptions);
 
-    return { success: true, info };
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-      status: error.status,
-    };
-  }
+        return {
+            success: true,
+            info
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while sending the password reset email',
+            status: 500,
+        };
+    }
 };
 
 export const resetPassword = async (token, password) => {
-  const tokenModel = new TokenModel();
-  const userModel = new UserModel();
+    const tokenModel = new TokenModel();
 
-  try {
-    const [tokenRow] = await tokenModel.find({ token });
+    let tokenRow;
+    try {
+        [tokenRow] = await tokenModel.find({ token });
 
-    if (!tokenRow)
-      return {
-        success: false,
-        message: 'Invalid or expired token. Please try again',
-        status: 401,
-      };
+        if (!tokenRow.length)
+            return {
+                success: false,
+                message: 'Invalid or expired token. Please try again',
+                status: 401,
+            };
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while resetting the password',
+            status: 500,
+        };
+    }
 
-    if (!hashedPassword)
-      return {
-        success: false,
-        message: 'Failed to hash password',
-        status: 401,
-      };
+    let hashedPassword;
+    try {
+        hashedPassword = await bcrypt.hash(password, 10);
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while resetting the password',
+            status: 500,
+        };
+    }
+    const userModel = new UserModel();
 
-    const updateResult = await userModel.update(
-      { password: hashedPassword },
-      { id: tokenRow.user_id }
-    );
+    try {
+        const updateResult = await userModel.update(
+            { password: hashedPassword },
+            { id: tokenRow[0].user_id }
+        );
 
-    if (!updateResult.affectedRows)
-      return {
-        success: false,
-        message: 'Failed to update password',
-        status: 401,
-      };
+        if (!updateResult.affectedRows)
+            return {
+                success: false,
+                message: 'Failed to update password',
+                status: 401,
+            };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while resetting the password',
+            status: 500,
+        };
+    }
 
-    await tokenModel.delete({ token });
+    try {
+        await tokenModel.delete({ token });
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while resetting the password',
+            status: 500,
+        };
+    }
 
     return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-      status: error.status,
-    };
-  }
 };
