@@ -70,12 +70,12 @@ const updateUserValidation = [
     .optional()
     .trim()
     .isURL()
-    .withMessage('Profile picture must be a URL'), // TODO: add local pictures
+    .withMessage('Profile picture must be a URL'),
   body('coverPicture')
     .optional()
     .trim()
     .isURL()
-    .withMessage('Cover picture must be a URL'), // TODO: add local pictures
+    .withMessage('Cover picture must be a URL'),
   body('livesIn')
     .optional()
     .trim()
