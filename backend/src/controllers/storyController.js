@@ -75,14 +75,20 @@ export async function deleteStory(req, res, next) {
 }
 
 export async function getFeedStories(req, res, next) {
-    const lastId = Number(req.query.lastId) || 0;
-    const limit = Number(req.query.limit) || 10;
+    const { lastId } = req.query;
+    const { limit } = req.query;
 
     try {
+        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+            throw new CustomError('No valid last id is provided', 400);
+
+        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+            throw new CustomError('No valid limit is provided', 400);
+
         const getFeedStoriesResult = await storyService.getFeedStories(
             req.userId,
-            lastId,
-            limit
+            lastId ?? 0,
+            limit ?? 10
         );
 
         if (!getFeedStoriesResult.success)
@@ -102,19 +108,24 @@ export async function getFeedStories(req, res, next) {
 }
 
 export async function getUserStories(req, res, next) {
-    const lastId = Number(req.query.lastId) || 0;
-    const limit = Number(req.query.limit) || 10;
-
-    const userId = Number(req.params.userId);
+    const { active } = req.query;
+    const { lastId } = req.query;
+    const { limit } = req.query;
 
     try {
-        if (!userId || userId < 1)
-            throw new CustomError('No valid user id is provided', 400);
+        const onlyActive = (active !== undefined) ? Boolean(JSON.parse(active)) : undefined;
+
+        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+            throw new CustomError('No valid last id is provided', 400);
+
+        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+            throw new CustomError('No valid limit is provided', 400);
 
         const getUserStoriesResult = await storyService.getUserStories(
-            userId,
-            lastId,
-            limit
+            req.userId,
+            onlyActive,
+            lastId ?? 0,
+            limit ?? 10
         );
 
         if (!getUserStoriesResult.success)
