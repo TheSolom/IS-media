@@ -7,16 +7,16 @@ export default class StoryModel extends BaseModel {
     }
 
     async findFeedStories(userId, lastId, limit) {
-        const query = `SELECT * FROM ${this.getTableName()}
+        const query = `SELECT ${this.getTableName()}.*, u.username, u.profile_picture FROM ${this.getTableName()}
                         JOIN users AS u
                         ON u.id = ${this.getTableName()}.author_id
                         JOIN user_followers AS f
-                        ON f.follower_id = u.id
-                        WHERE f.follower_id = ? AND ${this.getTableName()}.id > ? AND ${this.getTableName()}.deleted_at > NOW()
+                        ON f.user_id = u.id
+                        WHERE ${this.getTableName()}.author_id != ? AND f.follower_id = ? AND ${this.getTableName()}.id > ? AND ${this.getTableName()}.deleted_at > NOW()
                         ORDER BY ${this.getTableName()}.created_at DESC, ${this.getTableName()}.id DESC
                         limit ?`;
 
-        const result = await connection.execute(query, [userId, lastId, limit.toString()]);
+        const result = await connection.execute(query, [userId, userId, lastId, limit.toString()]);
         return result;
     }
 
@@ -33,6 +33,16 @@ export default class StoryModel extends BaseModel {
     async findActiveUserStories(userId, lastId, limit) {
         const query = `SELECT * FROM ${this.getTableName()} 
                         WHERE author_id = ? AND id > ? AND deleted_at > NOW()
+                        ORDER BY created_at DESC, id DESC 
+                        limit ?`;
+
+        const result = await connection.execute(query, [userId, lastId, limit.toString()]);
+        return result;
+    }
+
+    async findPastUserStories(userId, lastId, limit) {
+        const query = `SELECT * FROM ${this.getTableName()} 
+                        WHERE author_id = ? AND id > ? AND deleted_at <= NOW()
                         ORDER BY created_at DESC, id DESC 
                         limit ?`;
 
