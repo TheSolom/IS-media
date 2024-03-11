@@ -100,11 +100,18 @@ export const getFeedStories = async (userId, lastId, limit) => {
     }
 };
 
-export const getUserStories = async (userId, lastId, limit) => {
+export const getUserStories = async (userId, onlyActive, lastId, limit) => {
     const storyModel = new StoryModel();
 
     try {
-        const [storyRows] = await storyModel.findUserStories(userId, lastId, limit);
+        let storyRows;
+        if (onlyActive === undefined)
+            [storyRows] = await storyModel.findUserStories(userId, lastId, limit);
+        else if (onlyActive)
+            [storyRows] = await storyModel.findActiveUserStories(userId, lastId, limit);
+        else
+            [storyRows] = await storyModel.findPastUserStories(userId, lastId, limit);
+
 
         const id = storyRows[0] ? storyRows[0].id : 0;
 
