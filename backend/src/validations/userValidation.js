@@ -20,11 +20,11 @@ const updateUserValidation = [
     .withMessage('Username must be between 5-20 characters long')
     .isAlphanumeric()
     .withMessage('Username must only contain letters and numbers')
-    .custom(async (signingUsername) => {
+    .custom(async (signingUsername, { req }) => {
       const userModel = new UserModel();
       const [userRow] = await userModel.find({ username: signingUsername });
 
-      if (userRow.length)
+      if (userRow.length && userRow[0].id !== req.userId)
         throw Error(
           'This username is already in use, please try another username'
         );
@@ -34,11 +34,11 @@ const updateUserValidation = [
     .normalizeEmail({ gmail_remove_dots: false })
     .isEmail()
     .withMessage('Please enter a valid email address')
-    .custom(async (signingEmail) => {
+    .custom(async (signingEmail, { req }) => {
       const userModel = new UserModel();
       const [userRow] = await userModel.find({ email: signingEmail });
 
-      if (userRow.length)
+      if (userRow.length && userRow[0].id !== req.userId)
         throw Error('This Email is already in use, please try another email');
     }),
   body('password')
@@ -59,7 +59,7 @@ const updateUserValidation = [
   body('gender')
     .optional()
     .trim()
-    .isIn(['male', 'female'])
+    .isIn(['male', 'female', 'Male', 'Female'])
     .withMessage('Gender must be male or female'),
   body('about')
     .optional()
@@ -80,7 +80,12 @@ const updateUserValidation = [
     .optional()
     .trim()
     .isString()
-    .withMessage('Lives in must be a string'),
+    .withMessage('LivesIn must be a string'),
+  body('worksAt')
+    .optional()
+    .trim()
+    .isString()
+    .withMessage('WorksAt must be a string'),
   body('relationship')
     .optional()
     .trim()
@@ -95,12 +100,13 @@ const updateUserValidation = [
       'username',
       'email',
       'password',
-      'birth_date',
+      'birthDate',
       'gender',
       'about',
       'profilePicture',
       'coverPicture',
       'livesIn',
+      'worksAt',
       'relationship',
     ];
 
