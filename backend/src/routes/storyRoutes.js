@@ -21,6 +21,6 @@ router.delete('/story/:storyId', deleteStory);
 
 router.get('/user/feed', getFeedStories);
 
-router.get('/user/:userId', getUserStories);
+router.get('/user', getUserStories);
 
 export default router;
