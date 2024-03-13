@@ -1,6 +1,8 @@
 import PostModel from '../models/postModel.js';
 import PostLikesModel from '../models/postLikesModel.js';
 import PostCommentsModel from '../models/postCommentsModel.js';
+import isValidUrl from '../utils/isValidUrl.js';
+import deleteMedia from '../utils/deleteMedia.js';
 
 export const getPost = async (postId) => {
     const postModel = new PostModel();
@@ -28,7 +30,6 @@ export const getPost = async (postId) => {
         };
     }
 };
-
 
 export const postPost = async (title, content, authorId) => {
     const postModel = new PostModel();
@@ -61,7 +62,19 @@ export const updatePost = async (title, content, postId, authorId) => {
     const postModel = new PostModel();
 
     try {
-        const updateResult = await postModel.update({ title, content }, { id: postId, author_id: authorId });
+        const [postRow] = await postModel.find({ id: postId, author_id: authorId });
+
+        if (!postRow.length)
+            return {
+                success: false,
+                message: `No post found with id '${postId}' `,
+                status: 404,
+            };
+
+        const updateResult = await postModel.update({ title, content }, { id: postId });
+
+        if (isValidUrl(postRow[0].content) && postRow[0].content !== content)
+            await deleteMedia(postRow[0], 'content');
 
         return {
             success: true,
@@ -170,7 +183,6 @@ export const getPostLikes = async (postId, lastId, limit) => {
     }
 };
 
-
 export const postPostLike = async (postId, userId) => {
     const postLikesModel = new PostLikesModel();
 
@@ -197,7 +209,6 @@ export const postPostLike = async (postId, userId) => {
         };
     }
 };
-
 
 export const deletePostLike = async (postId, userId) => {
     console.log('deletePostLike', postId, userId);
@@ -246,7 +257,6 @@ export const getPostComments = async (postId, lastId, limit) => {
     }
 };
 
-
 export const postPostComment = async (title, content, authorId, postId) => {
     const postCommentsModel = new PostCommentsModel();
     try {
@@ -277,7 +287,19 @@ export const updatePostComment = async (title, content, commentId, authorId) => 
     const postCommentsModel = new PostCommentsModel();
 
     try {
-        const updateResult = await postCommentsModel.update({ title, content }, { id: commentId, author_id: authorId });
+        const [commentRow] = await postCommentsModel.find({ id: commentId, author_id: authorId });
+
+        if (!commentRow.length)
+            return {
+                success: false,
+                message: `No comment found with id '${commentId}' `,
+                status: 404,
+            };
+
+        const updateResult = await postCommentsModel.update({ title, content }, { id: commentId });
+
+        if (isValidUrl(commentRow[0].content) && commentRow[0].content !== content)
+            await deleteMedia(commentRow[0], 'content');
 
         return {
             success: true,
