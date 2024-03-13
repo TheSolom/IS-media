@@ -25,9 +25,8 @@ export async function getUser(req, res, next) {
 }
 
 export async function updateUser(req, res, next) {
-    const { body } = req;
-
     const errors = validationResult(req);
+
     try {
         if (!errors.isEmpty()) {
             throw new CustomError(
@@ -39,7 +38,7 @@ export async function updateUser(req, res, next) {
 
         const getUpdateUserResult = await userService.updateUser(
             req.userId,
-            body
+            req.body
         );
 
         if (!getUpdateUserResult.success)
@@ -57,19 +56,52 @@ export async function updateUser(req, res, next) {
     }
 }
 
-export async function getUserFollowers(req, res, next) {
-    const lastId = Number(req.query.lastId) || 0;
-    const limit = Number(req.query.limit) || 10;
-    const userId = Number(req.params.userId);
+export async function isUserFollowee(req, res, next) {
+    const followerId = Number(req.params.followerId);
 
     try {
-        if (userId && userId < 1)
+        if (!followerId || followerId < 1)
+            throw new CustomError('No valid follewer id is provided', 400);
+
+        if (followerId === req.userId)
+            throw new CustomError('User cannot follow himself', 400);
+
+        const getUserFollowersResult = await userService.isUserFollowee(
+            followerId,
+            req.userId,
+        );
+
+        if (!getUserFollowersResult.success)
+            throw new CustomError(getUserFollowersResult.message, getUserFollowersResult.status);
+
+        res.status(200).json({
+            success: true,
+            isFollowing: getUserFollowersResult.isFollowing,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getUserFollowers(req, res, next) {
+    const { userId } = req.query;
+    const { lastId } = req.query;
+    const { limit } = req.query;
+
+    try {
+        if (userId !== undefined && (Number.isNaN(userId) || userId === null || userId < 1))
             throw new CustomError('No valid user id is provided', 400);
+
+        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+            throw new CustomError('No valid last id is provided', 400);
+
+        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+            throw new CustomError('No valid limit is provided', 400);
 
         const getUserFollowersResult = await userService.getUserFollowers(
             userId ?? req.userId,
-            lastId,
-            limit
+            lastId ?? 0,
+            limit ?? 10
         );
 
         if (!getUserFollowersResult.success)
@@ -85,28 +117,61 @@ export async function getUserFollowers(req, res, next) {
     }
 }
 
-export async function getUserFollowings(req, res, next) {
-    const lastId = Number(req.query.lastId) || 0;
-    const limit = Number(req.query.limit) || 10;
-    const userId = Number(req.params.userId);
+export async function isUserFollower(req, res, next) {
+    const followeeId = Number(req.params.followeeId);
 
     try {
-        if (userId && userId < 1)
+        if (!followeeId || followeeId < 1)
+            throw new CustomError('No valid follewer id is provided', 400);
+
+        if (followeeId === req.userId)
+            throw new CustomError('User cannot follow himself', 400);
+
+        const getUserFollowersResult = await userService.isUserFollower(
+            followeeId,
+            req.userId,
+        );
+
+        if (!getUserFollowersResult.success)
+            throw new CustomError(getUserFollowersResult.message, getUserFollowersResult.status);
+
+        res.status(200).json({
+            success: true,
+            isFollowing: getUserFollowersResult.isFollowing,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getUserFollowings(req, res, next) {
+    const { userId } = req.query;
+    const { lastId } = req.query;
+    const { limit } = req.query;
+
+    try {
+        if (userId !== undefined && (Number.isNaN(userId) || userId === null || userId < 1))
             throw new CustomError('No valid user id is provided', 400);
+
+        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+            throw new CustomError('No valid last id is provided', 400);
+
+        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+            throw new CustomError('No valid limit is provided', 400);
 
         const getUserFollowingsResult = await userService.getUserFollowings(
             userId ?? req.userId,
-            lastId,
-            limit
+            lastId ?? 0,
+            limit ?? 10
         );
 
         if (!getUserFollowingsResult.success)
             throw new CustomError(getUserFollowingsResult.message, getUserFollowingsResult.status);
 
-        res.status(getUserFollowingsResult.followers.length ? 200 : 204).json({
+        res.status(getUserFollowingsResult.followings.length ? 200 : 204).json({
             success: true,
             lastId: getUserFollowingsResult.lastId,
-            followers: getUserFollowingsResult.followers,
+            followings: getUserFollowingsResult.followings,
         });
     } catch (error) {
         next(error);
@@ -114,14 +179,14 @@ export async function getUserFollowings(req, res, next) {
 }
 
 export async function postUserFollow(req, res, next) {
-    const followeeId = Number(req.params.followeeId);
+    const followeeId = Number(req.body.followeeId);
 
     try {
         if (!followeeId || followeeId < 1)
             throw new CustomError('No valid followee id is provided', 400);
 
-        if (req.userId === followeeId)
-            throw new CustomError('You can not follow yourself', 400);
+        if (followeeId === req.userId)
+            throw new CustomError('User cannot follow himself', 400);
 
         const postUserFollowResult = await userService.postUserFollow(
             followeeId,
@@ -151,7 +216,7 @@ export async function deleteUserFollow(req, res, next) {
         if (!followeeId || followeeId < 1)
             throw new CustomError('No valid followee id is provided', 400);
 
-        if (req.userId === followeeId)
+        if (followeeId === req.userId)
             throw new CustomError('You can not unfollow yourself', 400);
 
         const deleteUserFollowResult = await userService.deleteUserFollow(
@@ -176,14 +241,20 @@ export async function deleteUserFollow(req, res, next) {
 }
 
 export async function getUserBlocks(req, res, next) {
-    const lastId = Number(req.query.lastId) || 0;
-    const limit = Number(req.query.limit) || 10;
+    const { lastId } = req.query;
+    const { limit } = req.query;
 
     try {
+        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+            throw new CustomError('No valid last id is provided', 400);
+
+        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+            throw new CustomError('No valid limit is provided', 400);
+
         const getUserBlocksResult = await userService.getUserBlocks(
             req.userId,
-            lastId,
-            limit
+            lastId ?? 0,
+            limit ?? 10
         );
 
         if (!getUserBlocksResult.success)
@@ -192,10 +263,37 @@ export async function getUserBlocks(req, res, next) {
                 getUserBlocksResult.status
             );
 
-        res.status(getUserBlocksResult.followers.length ? 200 : 204).json({
+        res.status(getUserBlocksResult.blocks.length ? 200 : 204).json({
             success: true,
             lastId: getUserBlocksResult.lastId,
-            followers: getUserBlocksResult.followers,
+            blocks: getUserBlocksResult.blocks,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getUserBlockStatus(req, res, next) {
+    const userId = Number(req.params.userId);
+
+    try {
+        if (!userId || userId < 1)
+            throw new CustomError('No valid blocked id is provided', 400);
+
+        if (userId === req.userId)
+            throw new CustomError('User cannot block himself', 400);
+
+        const getUserBlocksResult = await userService.getUserBlockStatus(
+            userId,
+            req.userId,
+        );
+
+        if (!getUserBlocksResult.success)
+            throw new CustomError(getUserBlocksResult.message, getUserBlocksResult.status);
+
+        res.status(200).json({
+            success: true,
+            blockStatus: getUserBlocksResult.blockStatus,
         });
     } catch (error) {
         next(error);
@@ -203,7 +301,7 @@ export async function getUserBlocks(req, res, next) {
 }
 
 export async function postUserBlock(req, res, next) {
-    const blockedId = Number(req.params.blockedId);
+    const blockedId = Number(req.body.blockedId);
 
     try {
         if (!blockedId || blockedId < 1)
