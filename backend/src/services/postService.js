@@ -31,11 +31,11 @@ export const getPost = async (postId) => {
     }
 };
 
-export const postPost = async (title, content, authorId) => {
+export const postPost = async (title, content, authorId, parentId) => {
     const postModel = new PostModel();
 
     try {
-        const createResult = await postModel.create({ title, content, author_id: authorId });
+        const createResult = await postModel.create({ title, content, author_id: authorId, parent_id: parentId || null });
 
         if (!createResult.affectedRows)
             return {

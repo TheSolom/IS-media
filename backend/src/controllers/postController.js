@@ -24,15 +24,20 @@ export async function getPost(req, res, next) {
 
 export async function postPost(req, res, next) {
     const { title, content } = req.body;
+    const { parentId } = req.query;
 
     try {
+        if (parentId !== undefined && (Number.isNaN(parentId) || parentId === null || parentId < 1))
+            throw new CustomError('No valid parent id is provided', 400);
+
         if (!content)
             throw new CustomError('No content is provided', 400);
 
         const postPostResult = await postService.postPost(
             title ?? "",
             content,
-            req.userId
+            req.userId,
+            parentId
         );
 
         if (!postPostResult.success)
