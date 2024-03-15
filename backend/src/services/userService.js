@@ -100,6 +100,30 @@ export const updateUser = async (userId, data) => {
     }
 };
 
+export const searchUser = async (username, limit) => {
+    const userModel = new UserModel();
+
+    try {
+        const [usersRows] = await userModel.search(username, limit);
+
+        if (!usersRows.length)
+            return {
+                success: false,
+                message: `No user found with provided username '${username}' `,
+                status: 404,
+            };
+
+        return { success: true, users: usersRows };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while searching the users',
+            status: 500,
+        };
+    }
+};
+
 export const isUserFollowee = async (followerId, userId) => {
     const userFollowersModel = new UserFollowersModel();
     console.log(followerId, userId);

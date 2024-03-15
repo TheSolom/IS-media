@@ -56,6 +56,34 @@ export async function updateUser(req, res, next) {
     }
 }
 
+export async function searchUser(req, res, next) {
+    const { username } = req.params;
+    const { limit } = req.query;
+
+    try {
+        if (!username)
+            throw new CustomError('No valid username is provided', 400);
+
+        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+            throw new CustomError('No valid limit is provided', 400);
+
+        const searchUserResult = await userService.searchUser(
+            username,
+            limit ?? 10
+        );
+
+        if (!searchUserResult.success)
+            throw new CustomError(searchUserResult.message, searchUserResult.status);
+
+        res.status(200).json({
+            success: true,
+            users: searchUserResult.users,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function isUserFollowee(req, res, next) {
     const followerId = Number(req.params.followerId);
 

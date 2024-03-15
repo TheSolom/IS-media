@@ -3,6 +3,7 @@ import express from 'express';
 import {
     getUser,
     updateUser,
+    searchUser,
     isUserFollowee,
     getUserFollowers,
     isUserFollower,
@@ -24,6 +25,8 @@ router.use(authMiddleware);
 router.get('/profile/:userId', getUser);
 
 router.patch('/profile', updateUserValidation, updateUser);
+
+router.get('/search/:username', searchUser);
 
 router.get('/followers/:followerId', isUserFollowee);
 
