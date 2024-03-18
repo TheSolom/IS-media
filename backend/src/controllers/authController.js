@@ -38,7 +38,7 @@ export async function postLogin(req, res, next) {
             userId: loginResult.userId,
         });
     } catch (error) {
-        error.error = errors.array()[0]?.msg;
+        error.cause = errors.array()[0]?.msg;
         next(error);
     }
 }
@@ -76,7 +76,7 @@ export async function postSignup(req, res, next) {
             userId: signupResult.createResult.insertId,
         });
     } catch (error) {
-        error.error = errors.array()[0]?.msg;
+        error.cause = errors.array()[0]?.msg;
         next(error);
     }
 }

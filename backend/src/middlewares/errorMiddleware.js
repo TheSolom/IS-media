@@ -3,7 +3,7 @@ export default function errorMiddleware(err, _req, res, _next) {
 	const response = {
 		success: false,
 		message: err.message,
-		error: err.error,
+		cause: err.cause,
 	};
 
 	res.status(statusCode).json(response);

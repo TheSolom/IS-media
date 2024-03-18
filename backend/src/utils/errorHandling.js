@@ -1,9 +1,9 @@
 export default class CustomError extends Error {
-  constructor(message, statusCode, error) {
+  constructor(message, statusCode, cause) {
     super(message);
     this.name = this.constructor.name;
     this.status = statusCode || 500;
-    if (error) this.error = error;
+    if (cause) this.cause = cause;
     Error.captureStackTrace(this, this.constructor);
   }
 }
