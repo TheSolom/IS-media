@@ -24,7 +24,7 @@ app.use(express.static(join(__dirname, 'public')));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.json({ limit: '10mb' }));
 
-app.use(cors({ origin: 'https://is-media.onrender.com', credentials: true }));
+app.use(cors({ origin: 'https://is-media.vercel.app', credentials: true }));
 
 app.use(helmet());
 
