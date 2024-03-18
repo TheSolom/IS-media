@@ -3,6 +3,8 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import cors from 'cors';
+import helmet from "helmet";
+import morgan from "morgan";
 
 import errorMiddleware from './middlewares/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
@@ -23,6 +25,11 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.json({ limit: '10mb' }));
 
 app.use(cors({ origin: 'https://is-media.onrender.com', credentials: true }));
+
+app.use(helmet());
+
+if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
+else app.use(morgan("combined"));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
