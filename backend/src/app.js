@@ -22,7 +22,7 @@ app.use(express.static(join(__dirname, 'public')));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.json({ limit: '10mb' }));
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: 'https://is-media.onrender.com', credentials: true }));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
@@ -32,4 +32,4 @@ app.use('/api/v1/stories', storyRoutes);
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Running on http://localhost:${PORT}`));
+server.listen(PORT);
