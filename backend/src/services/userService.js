@@ -222,6 +222,20 @@ export const postUserFollow = async (followeeId, followerId) => {
         return { success: true };
     } catch (error) {
         console.error(error);
+        if (error.code === 'ER_DUP_ENTRY')
+            return {
+                success: false,
+                message: `User is already following`,
+                status: 400,
+            };
+
+        if (error.code === 'ER_NO_REFERENCED_ROW_2')
+            return {
+                success: false,
+                message: `No user found with provided id '${followeeId}' `,
+                status: 404,
+            };
+            
         return {
             success: false,
             message: 'An error occurred while following the user',
@@ -314,6 +328,21 @@ export const postUserBlock = async (blockedId, blockerId) => {
 
     } catch (error) {
         console.error(error);
+
+        if (error.code === 'ER_DUP_ENTRY')
+            return {
+                success: false,
+                message: `User is already blocked`,
+                status: 400,
+            };
+
+        if (error.code === 'ER_NO_REFERENCED_ROW_2')
+            return {
+                success: false,
+                message: `No user found with provided id '${blockedId}' `,
+                status: 404,
+            };
+
         return {
             success: false,
             message: 'An error occurred while blocking the user',
