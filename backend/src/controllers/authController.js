@@ -12,7 +12,7 @@ export async function postLogin(req, res, next) {
     try {
         if (!errors.isEmpty()) {
             throw new CustomError(
-                'Validation failed, Signingup data is incorrect',
+                'Validation failed, Signing in data is incorrect',
                 422,
                 errors.array()[0].msg
             );
@@ -51,7 +51,7 @@ export async function postSignup(req, res, next) {
     try {
         if (!errors.isEmpty()) {
             throw new CustomError(
-                'Validation failed, Signingup data is incorrect',
+                'Validation failed, Signing up data is incorrect',
                 422,
                 errors.array()[0].msg
             );
