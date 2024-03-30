@@ -38,7 +38,7 @@ export const loginUser = async (emailOrUsername, password, MAX_AGE) => {
         if (!userRow.length)
             return {
                 success: false,
-                message: 'Incorrect email or password. Please try again',
+                message: 'Incorrect username or email or password. Please try again',
                 status: 401,
             };
 
@@ -57,7 +57,7 @@ export const loginUser = async (emailOrUsername, password, MAX_AGE) => {
         if (!isPasswordMatch)
             return {
                 success: false,
-                message: 'Incorrect email or password. Please try again',
+                message: 'Incorrect username or email or password. Please try again',
                 status: 401,
             };
     } catch (error) {
