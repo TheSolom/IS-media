@@ -37,7 +37,7 @@ export async function postPost(req, res, next) {
             title ?? "",
             content,
             req.userId,
-            parentId
+            parentId ?? null
         );
 
         if (!postPostResult.success)
