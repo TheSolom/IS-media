@@ -35,7 +35,7 @@ export const postPost = async (title, content, authorId, parentId) => {
     const postModel = new PostModel();
 
     try {
-        const createResult = await postModel.create({ title, content, author_id: authorId, parent_id: parentId || null });
+        const createResult = await postModel.create({ title, content, author_id: authorId, parent_id: parentId });
 
         if (!createResult.affectedRows)
             return {
