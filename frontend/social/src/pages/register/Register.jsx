@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './register.scss';
 import axios from 'axios';
 
@@ -12,9 +12,10 @@ const Register = () => {
         password: '',
         confirmPassword: '',
         birthDate: '',
-        gender: '',
+        gender: 'male',
     });
     const [err, setErr] = useState(null);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -24,17 +25,16 @@ const Register = () => {
         e.preventDefault();
 
         try {
-            console.log(inputs);
             await axios.post(
                 'http://localhost:5000/api/v1/auth/signup',
                 inputs,
             );
+            navigate('/login');
+            alert('Registered successfully');
         } catch (err) {
-            setErr(err.response.data);
+            setErr(err.response.data.cause);
         }
     };
-
-    // console.log(err);
 
     return (
         <div className="register">
@@ -42,9 +42,8 @@ const Register = () => {
                 <div className="left">
                     <h1>IS Media.</h1>
                     <p>
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                        Libero cum, alias totam numquam ipsa exercitationem
-                        dignissimos, error nam, consequatur.
+                        Connect with friends and the world around you on IS
+                        Media
                     </p>
                     <span>Do you have an account?</span>
                     <Link to="/login">
@@ -101,12 +100,22 @@ const Register = () => {
                         </label>
                         <label>
                             Gender :
-                            <select name="gender" onChange={handleChange}>
+                            <select name="gender" value={inputs.gender} onChange={handleChange}>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
                             </select>
                         </label>
-                        {err && err}
+                        {err && (
+                            <div
+                                style={{
+                                    color: 'red',
+                                    fontWeight: 'bold',
+                                    marginTop: '10px',
+                                }}
+                            >
+                                {err}
+                            </div>
+                        )}
                         <button onClick={handleClick}>Register</button>
                     </form>
                 </div>

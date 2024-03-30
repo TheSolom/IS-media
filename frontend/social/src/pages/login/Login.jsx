@@ -23,7 +23,7 @@ const Login = () => {
             await login(inputs);
             navigate('/');
         } catch (err) {
-            setErr(err.response.data);
+            setErr(err.response.data.cause ?? err.response.data.message);
         }
     };
 
@@ -31,11 +31,10 @@ const Login = () => {
         <div className="login">
             <div className="card">
                 <div className="left">
-                    <h1>Hello World.</h1>
+                    <h1>IS Media</h1>
                     <p>
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                        Libero cum, alias totam numquam ipsa exercitationem
-                        dignissimos, error nam, consequatur.
+                        Connect with friends and the world around you on IS
+                        Media
                     </p>
                     <span>Don't you have an account?</span>
                     <Link to="/register">
@@ -57,7 +56,17 @@ const Login = () => {
                             name="password"
                             onChange={handleChange}
                         />
-                        {err && err}
+                        {err && (
+                            <div
+                                style={{
+                                    color: 'red',
+                                    fontWeight: 'bold',
+                                    marginTop: '10px',
+                                }}
+                            >
+                                {err}
+                            </div>
+                        )}
                         <button onClick={handleLogin}>Login</button>
                     </form>
                 </div>
