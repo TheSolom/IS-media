@@ -7,9 +7,7 @@ export default class PostTagsModel extends BaseModel {
     }
 
     async findPostTags(postId) {
-        const query = `SELECT tags.* FROM ${this.getTableName()}
-                        JOIN tags
-                        ON tags.id = ${this.getTableName()}.tag_id
+        const query = `SELECT tag FROM ${this.getTableName()}
                         WHERE ${this.getTableName()}.post_id = ?`;
 
         const result = await connection.execute(query, [postId]);
