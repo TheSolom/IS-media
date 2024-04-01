@@ -1,5 +1,5 @@
 {
-    "name": "esmedia",
+    "name": "ismedia",
     "version": "1.0.0",
     "description": "social media and realtime chatting website",
     "main": "app.js",
@@ -8,6 +8,9 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node src/app.js",
         "dev": "node --watch --env-file=.env src/app.js"
+    },
+    "engines": {
+        "node": ">=20.12.0"
     },
     "author": "TheSolom",
     "license": "ISC",
