@@ -1,4 +1,4 @@
-import deleteCloudinaryMedia from './cloudinaryDelete.js';
+import deleteCloudinaryMedia from './cloudinary/cloudinaryDelete.js';
 
 const getResourceType = (format) => {
     if (!format)
