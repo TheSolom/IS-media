@@ -2,7 +2,7 @@ import { validationResult } from 'express-validator';
 
 import CustomError from '../utils/errorHandling.js';
 import * as authService from '../services/authService.js';
-import signUploadForm from '../utils/cloudinarySignature.js';
+import signUploadForm from '../utils/cloudinary/cloudinarySignature.js';
 
 export async function postLogin(req, res, next) {
     const MAX_AGE = 3 * 24 * 60 * 60; // 3 days in seconds
