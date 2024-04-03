@@ -1,4 +1,5 @@
 import PostModel from '../models/postModel.js';
+import { postPostTags } from './postTagsService.js';
 import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
 
@@ -30,21 +31,37 @@ export const getPost = async (postId) => {
 };
 
 export const postPost = async (title, content, authorId, parentId) => {
+    const titleNormalized = title.trim();
+    const contentNormalized = content.trim();
+
     const postModel = new PostModel();
 
     try {
-        const createResult = await postModel.create({ title, content, author_id: authorId, parent_id: parentId });
+        const createPostResult = await postModel.create({ title: titleNormalized, content: contentNormalized, author_id: authorId, parent_id: parentId });
 
-        if (!createResult.affectedRows)
+        if (!createPostResult.affectedRows)
             return {
                 success: false,
-                message: `Failed to create post for user with id '${authorId}' `,
+                message: 'An error occurred while creating the post',
                 status: 500,
             };
 
+        const createTagsResult = await postPostTags(titleNormalized, contentNormalized, createPostResult.insertId);
+
+        if (!createTagsResult.success) {
+            await postModel.delete({ id: createPostResult.insertId });
+
+            return {
+                success: false,
+                message: createTagsResult.status === 400 ?
+                    createTagsResult.message : 'An error occurred while creating the post',
+                status: createTagsResult.status
+            };
+        }
+
         return {
             success: true,
-            createResult
+            createPostResult
         };
     } catch (error) {
         console.error(error);
