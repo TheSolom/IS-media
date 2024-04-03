@@ -1,9 +1,9 @@
-import { v2 as Cloudinary } from 'cloudinary';
+import cloudinary from '../../configs/cloudinary.js';
 
 const signUploadForm = () => {
     const timestamp = Math.round((new Date).getTime() / 1000);
 
-    const signature = Cloudinary.utils.api_sign_request({
+    const signature = cloudinary.utils.api_sign_request({
         timestamp,
         folder: 'SocialMedia',
     }, process.env.CLOUDINARY_API_SECRET);

@@ -1,4 +1,4 @@
-import cloudinary from '../configs/cloudinary.js';
+import cloudinary from '../../configs/cloudinary.js';
 
 const deleteCloudinaryMedia = async (publicId, resourceType) => {
     if (!publicId)
