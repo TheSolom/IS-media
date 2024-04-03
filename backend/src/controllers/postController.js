@@ -1,3 +1,5 @@
+import validator from 'validator';
+
 import CustomError from '../utils/errorHandling.js';
 import * as postService from '../services/postService.js';
 
@@ -27,11 +29,14 @@ export async function postPost(req, res, next) {
     const { parentId } = req.query;
 
     try {
-        if (parentId !== undefined && (Number.isNaN(parentId) || parentId === null || parentId < 1))
+        if (parentId !== undefined && (parentId === null || Number.isNaN(Number(parentId)) || Number(parentId) < 1))
             throw new CustomError('No valid parent id is provided', 400);
 
-        if (!content)
-            throw new CustomError('No content is provided', 400);
+        if (title !== undefined && !validator.isAlphanumeric(title))
+            throw new CustomError('No valid title is provided', 400);
+
+        if (!content || !validator.isAlphanumeric(content))
+            throw new CustomError('No valid content is provided', 400);
 
         const postPostResult = await postService.postPost(
             title ?? "",
@@ -58,8 +63,11 @@ export async function updatePost(req, res, next) {
     const postId = Number(req.params.postId);
 
     try {
-        if (!content)
-            throw new CustomError('No content is provided', 400);
+        if (title !== undefined && !validator.isAlphanumeric(title))
+            throw new CustomError('No valid title is provided', 400);
+
+        if (!content || !validator.isAlphanumeric(content))
+            throw new CustomError('No valid content is provided', 400);
 
         if (!postId || postId < 1)
             throw new CustomError('No valid post id is provided', 400);
@@ -114,14 +122,13 @@ export async function deletePost(req, res, next) {
 }
 
 export async function getFeedPosts(req, res, next) {
-    const { lastId } = req.query;
-    const { limit } = req.query;
+    const { lastId, limit } = req.query;
 
     try {
-        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
             throw new CustomError('No valid last id is provided', 400);
 
-        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
         const getFeedPostsResult = await postService.getFeedPosts(
@@ -147,18 +154,16 @@ export async function getFeedPosts(req, res, next) {
 }
 
 export async function getUserPosts(req, res, next) {
-    const { userId } = req.query;
-    const { lastId } = req.query;
-    const { limit } = req.query;
+    const { userId, lastId, limit } = req.query;
 
     try {
-        if (userId !== undefined && (Number.isNaN(userId) || userId === null || userId < 1))
+        if (userId !== undefined && (userId === null || Number.isNaN(Number(userId)) || Number(userId) < 1))
             throw new CustomError('No valid user id is provided', 400);
 
-        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
             throw new CustomError('No valid last id is provided', 400);
 
-        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
         const getUserPostsResult = await postService.getUserPosts(
