@@ -6,7 +6,6 @@ export default class PostCommentsModel extends BaseModel {
         super('post_comments');
     }
 
-
     async findPostComments(postId, lastId, limit) {
         const query = `SELECT ${this.getTableName()}.*, u.username, u.profile_picture FROM ${this.getTableName()}
                         JOIN users AS u

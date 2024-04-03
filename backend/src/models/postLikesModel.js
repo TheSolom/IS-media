@@ -6,7 +6,6 @@ export default class PostLikesModel extends BaseModel {
         super('post_likes');
     }
 
-
     async findPostLikes(postId, lastId, limit) {
         const query = `SELECT ${this.getTableName()}.*, u.username, u.profile_picture FROM ${this.getTableName()}
                         JOIN users AS u
