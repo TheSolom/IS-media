@@ -18,13 +18,15 @@ export default class PostTagsModel extends BaseModel {
 
     async findTagPosts(tag, lastId, limit) {
         const query = `SELECT
-                            p.*
+                            p.*, ${this.getTableName()}.id as post_tag_id
                         FROM
                             ${this.getTableName()}
+                        JOIN tags as t
+                            ON t.id = ${this.getTableName()}.tag_id
                         JOIN posts AS p
                             ON p.id = ${this.getTableName()}.post_id
                         WHERE
-                            ${this.getTableName()}.tag = ?
+                            t.tag = ?
                             AND ${this.getTableName()}.id > ?
                         ORDER BY
                             ${this.getTableName()}.created_at DESC,
