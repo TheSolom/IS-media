@@ -64,7 +64,7 @@ export async function searchUser(req, res, next) {
         if (!username)
             throw new CustomError('No valid username is provided', 400);
 
-        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
         const searchUserResult = await userService.searchUser(
