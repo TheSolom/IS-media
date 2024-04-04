@@ -29,14 +29,13 @@ export async function getUserBlockStatus(req, res, next) {
 }
 
 export async function getUserBlocks(req, res, next) {
-    const { lastId } = req.query;
-    const { limit } = req.query;
+    const { lastId, limit } = req.query;
 
     try {
-        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
             throw new CustomError('No valid last id is provided', 400);
 
-        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
         const getUserBlocksResult = await userService.getUserBlocks(
