@@ -11,10 +11,10 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/likes/:postId', getPostLikes);
+router.get('/:postId', getPostLikes);
 
-router.post('/like', postPostLike);
+router.post('/', postPostLike);
 
-router.delete('/like/:postId', deletePostLike);
+router.delete('/:postId', deletePostLike);
 
 export default router;
