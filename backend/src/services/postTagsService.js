@@ -124,3 +124,27 @@ export const postPostTags = async (postTitle, postContent, postId) => {
         };
     }
 };
+
+export const deletePostTags = async (postId) => {
+    const postTagsModel = new PostTagsModel();
+
+    try {
+        const deleteResult = postTagsModel.delete({ post_id: postId });
+
+        if (!deleteResult.affectedRows)
+            return {
+                success: false,
+                message: `No tags found for post with id '${postId}' `,
+                status: 404,
+            };
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while deleting the post tags',
+            status: 500,
+        };
+    }
+};
