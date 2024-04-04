@@ -32,10 +32,10 @@ export async function postPost(req, res, next) {
         if (parentId !== undefined && (parentId === null || Number.isNaN(Number(parentId)) || Number(parentId) < 1))
             throw new CustomError('No valid parent id is provided', 400);
 
-        if (title !== undefined && !validator.isAlphanumeric(title))
+        if (title !== undefined && !validator.isAscii(title))
             throw new CustomError('No valid title is provided', 400);
 
-        if (!content || !validator.isAlphanumeric(content))
+        if (!content || !validator.isAscii(content))
             throw new CustomError('No valid content is provided', 400);
 
         const postPostResult = await postService.postPost(
@@ -63,10 +63,10 @@ export async function updatePost(req, res, next) {
     const postId = Number(req.params.postId);
 
     try {
-        if (title !== undefined && !validator.isAlphanumeric(title))
+        if (title !== undefined && !validator.isAscii(title))
             throw new CustomError('No valid title is provided', 400);
 
-        if (!content || !validator.isAlphanumeric(content))
+        if (!content || !validator.isAscii(content))
             throw new CustomError('No valid content is provided', 400);
 
         if (!postId || postId < 1)
