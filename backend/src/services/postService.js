@@ -1,5 +1,5 @@
 import PostModel from '../models/postModel.js';
-import { postPostTags } from './postTagsService.js';
+import { postPostTags, deletePostTags } from './postTagsService.js';
 import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
 
@@ -74,6 +74,9 @@ export const postPost = async (title, content, authorId, parentId) => {
 };
 
 export const updatePost = async (title, content, postId, authorId) => {
+    const titleNormalized = title.trim();
+    const contentNormalized = content.trim();
+
     const postModel = new PostModel();
 
     try {
@@ -86,9 +89,38 @@ export const updatePost = async (title, content, postId, authorId) => {
                 status: 404,
             };
 
-        const updateResult = await postModel.update({ title, content }, { id: postId });
+        if (postRow[0].title === titleNormalized && postRow[0].content === contentNormalized)
+            return {
+                success: false,
+                message: 'No changes detected',
+                status: 200
+            };
 
-        if (isValidUrl(postRow[0].content) && postRow[0].content !== content)
+        const deletePostTagsResult = await deletePostTags(postId);
+
+        if (!deletePostTagsResult.success && deletePostTagsResult.status !== 404)
+            return {
+                success: false,
+                message: 'An error occurred while updating the post',
+                status: 500,
+            };
+
+        const updateResult = await postModel.update({ title: titleNormalized, content: contentNormalized }, { id: postId });
+
+        const createTagsResult = await postPostTags(titleNormalized, contentNormalized, postId);
+
+        if (!createTagsResult.success) {
+            await postModel.update({ title: postRow[0].title, content: postRow[0].content }, { id: postId });
+
+            return {
+                success: false,
+                message: createTagsResult.status === 400 ?
+                    createTagsResult.message : 'An error occurred while updating the post',
+                status: createTagsResult.status
+            };
+        }
+
+        if (isValidUrl(postRow[0].content) && postRow[0].content !== contentNormalized)
             await deleteMedia(postRow[0], 'content');
 
         return {
