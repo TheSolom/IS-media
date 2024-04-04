@@ -1,5 +1,5 @@
 import CustomError from '../utils/errorHandling.js';
-import * as userService from '../services/userBlocksService.js';
+import * as userBlocksService from '../services/userBlocksService.js';
 
 export async function getUserBlockStatus(req, res, next) {
     const userId = Number(req.params.userId);
@@ -11,7 +11,7 @@ export async function getUserBlockStatus(req, res, next) {
         if (userId === req.userId)
             throw new CustomError('User cannot block himself', 400);
 
-        const getUserBlocksResult = await userService.getUserBlockStatus(
+        const getUserBlocksResult = await userBlocksService.getUserBlockStatus(
             userId,
             req.userId,
         );
@@ -38,7 +38,7 @@ export async function getUserBlocks(req, res, next) {
         if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
-        const getUserBlocksResult = await userService.getUserBlocks(
+        const getUserBlocksResult = await userBlocksService.getUserBlocks(
             req.userId,
             lastId ?? 0,
             limit ?? 10
@@ -70,7 +70,7 @@ export async function postUserBlock(req, res, next) {
         if (req.userId === blockedId)
             throw new CustomError('You can not block yourself', 400);
 
-        const postUserBlockResult = await userService.postUserBlock(
+        const postUserBlockResult = await userBlocksService.postUserBlock(
             blockedId,
             req.userId
         );
@@ -100,7 +100,7 @@ export async function deleteUserBlock(req, res, next) {
         if (req.userId === blockedId)
             throw new CustomError('You can not unblock yourself', 400);
 
-        const deleteUserBlockResult = await userService.deleteUserBlock(
+        const deleteUserBlockResult = await userBlocksService.deleteUserBlock(
             blockedId,
             req.userId
         );
