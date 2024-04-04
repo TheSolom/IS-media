@@ -5,8 +5,8 @@ import {
     postPost,
     updatePost,
     deletePost,
-    getUserPosts,
     getFeedPosts,
+    getUserPosts,
 } from '../controllers/postController.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
@@ -14,15 +14,15 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/post/:postId', getPost);
+router.get('/:postId', getPost);
 
 router.post('/post', postPost);
 
-router.patch('/post/:postId', updatePost);
+router.patch('/:postId', updatePost);
 
-router.delete('/post/:postId', deletePost);
+router.delete('/:postId', deletePost);
 
-router.get('/user/feed', getFeedPosts);
+router.get('/feed', getFeedPosts);
 
 router.get('/user', getUserPosts);
 
