@@ -12,12 +12,12 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/comments/:postId', getPostComments);
+router.get('/:postId', getPostComments);
 
-router.post('/comment', postPostComment);
+router.post('/', postPostComment);
 
-router.patch('/comment/:commentId', updatePostComment);
+router.patch('/:commentId', updatePostComment);
 
-router.delete('/comment/:commentId', deletePostComment);
+router.delete('/:commentId', deletePostComment);
 
 export default router;
