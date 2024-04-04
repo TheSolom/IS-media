@@ -13,13 +13,13 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/story/:storyId', getStory);
+router.get('/:storyId', getStory);
 
-router.post('/story', postStory);
+router.post('/', postStory);
 
-router.delete('/story/:storyId', deleteStory);
+router.delete('/:storyId', deleteStory);
 
-router.get('/user/feed', getFeedStories);
+router.get('/feed', getFeedStories);
 
 router.get('/user', getUserStories);
 
