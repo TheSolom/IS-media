@@ -15,4 +15,15 @@ export default class UserTagsModel extends BaseModel {
         const result = await connection.execute(query, [userId, limit.toString()]);
         return result;
     }
+
+    async createOrUpdateUsedTag(userId, tagId) {
+        const query = `INSERT INTO ${this.getTableName()}
+                        (user_id, tag_id, count)
+                        VALUES(?, ?, 1) 
+                        ON DUPLICATE KEY UPDATE
+                        count = count + 1`;
+
+        const result = await connection.execute(query, [userId, tagId]);
+        return result[0];
+    }
 }
