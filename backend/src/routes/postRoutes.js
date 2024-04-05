@@ -16,7 +16,7 @@ router.use(authMiddleware);
 
 router.get('/:postId', getPost);
 
-router.post('/post', postPost);
+router.post('/', postPost);
 
 router.patch('/:postId', updatePost);
 
