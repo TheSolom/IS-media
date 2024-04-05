@@ -51,7 +51,40 @@ export default class UserFollowersModel extends BaseModel {
                         WHERE (${this.getTableName()}.user_id = ? AND ${this.getTableName()}.follower_id = ?)
                         OR (${this.getTableName()}.user_id = ? AND ${this.getTableName()}.follower_id = ?)`;
 
-        const result = await connection.execute(query, [userId1, userId2, userId2, userId1,]);
+        const result = await connection.execute(query, [userId1, userId2, userId2, userId1]);
         return result[0];
+    }
+
+    async findAllFollows(limit) {
+        const query = `SELECT * FROM ${this.getTableName()}
+                        LIMIT ?`;
+
+        const result = await connection.execute(query, [limit.toString()]);
+        return result;
+    }
+
+    async findValidFollowSuggestions(suggestionsIds, userId, limit) {
+        if (!suggestionsIds.length)
+            return [[]];
+
+        const query = `SELECT
+                            users.id,
+                            users.username,
+                            users.profile_picture
+                        FROM
+                            users
+                        LEFT JOIN ${this.getTableName()} AS f
+                            ON f.user_id = users.id AND f.follower_id = ?
+                        LEFT JOIN user_blocklist AS blocker
+                            ON (blocker.user_id = ? AND blocker.blocked_id = users.id)
+                                OR (blocker.user_id = users.id AND blocker.blocked_id = ?)
+                        WHERE
+                            users.id IN (${suggestionsIds.map(() => '?').join(', ')})
+                            AND f.id IS NULL
+                            AND blocker.id IS NULL
+                        LIMIT ?`;
+
+        const result = await connection.execute(query, [userId, userId, userId, ...suggestionsIds, limit.toString()]);
+        return result;
     }
 }
