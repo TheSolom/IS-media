@@ -86,18 +86,34 @@ export async function updatePost(req, res, next) {
     const postId = Number(req.params.postId);
 
     try {
-        if (title !== undefined && !validator.isAscii(title))
-            throw new CustomError('No valid title is provided', 400);
+        let titleTrimmed = "";
+        if (title !== undefined) {
+            if (!validator.isAscii(title))
+                throw new CustomError('No valid title is provided', 400);
 
-        if (!content || !validator.isAscii(content))
-            throw new CustomError('No valid content is provided', 400);
+            titleTrimmed = title.trim();
+
+            if (titleTrimmed.length > 255)
+                throw new CustomError('Title is too long', 400);
+        }
+
+        let contentTrimmed = null;
+        if (!content) {
+            if (!validator.isAscii(content))
+                throw new CustomError('No valid content is provided', 400);
+
+            contentTrimmed = content.trim();
+
+            if (contentTrimmed.length > 1000)
+                throw new CustomError('Content is too long', 400);
+        }
 
         if (!postId || postId < 1)
             throw new CustomError('No valid post id is provided', 400);
 
         const updatePostResult = await postService.updatePost(
-            title ?? "",
-            content,
+            titleTrimmed,
+            contentTrimmed,
             postId,
             req.userId
         );
