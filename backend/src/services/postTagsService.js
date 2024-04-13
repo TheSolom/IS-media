@@ -2,7 +2,6 @@ import validator from 'validator';
 
 import PostTagsModel from '../models/postTagsModel.js';
 import TagsModel from '../models/tagsModel.js';
-import isValidUrl from '../utils/isValidUrl.js';
 import CustomError from '../utils/errorHandling.js';
 
 export const getPostTags = async (postId) => {
@@ -48,11 +47,8 @@ export const getTagPosts = async (tag, lastId, limit) => {
     }
 };
 
-export const postPostTags = async (postTitle, postContent, postId) => {
-    const tags = isValidUrl(postContent) ?
-        postTitle.match(/#([^#\s]+)/g) : postContent.match(/#([^#\s]+)/g);
-
-    if (!tags) {
+export const postPostTags = async (tags, postId) => {
+    if (!tags || !tags.length) {
         return {
             success: true,
             message: 'No tags in the post',
@@ -63,6 +59,7 @@ export const postPostTags = async (postTitle, postContent, postId) => {
     const tagsModel = new TagsModel();
     const postTagsModel = new PostTagsModel();
 
+    const tagsIds = [];
     try {
         const createTagsPromises = tags.map(async (tag) => {
             const tagNormalized = tag.substring(1).toLowerCase();
@@ -72,10 +69,15 @@ export const postPostTags = async (postTitle, postContent, postId) => {
 
             const [tagRow] = await tagsModel.find({ tag: tagNormalized });
 
-            if (tagRow.length)
+            if (tagRow.length) {
+                tagsIds.push(tagRow[0].id);
+
                 return postTagsModel.create({ tag_id: tagRow[0].id, post_id: postId });
+            }
 
             const createTagResult = await tagsModel.create({ tag: tagNormalized });
+
+            tagsIds.push(createTagResult.insertId);
 
             return postTagsModel.create({ tag_id: createTagResult.insertId, post_id: postId });
         });
@@ -114,6 +116,7 @@ export const postPostTags = async (postTitle, postContent, postId) => {
         return {
             success: true,
             message: 'Successfully added tags to the post',
+            tagsIds
         };
     } catch (error) {
         console.error(error);
