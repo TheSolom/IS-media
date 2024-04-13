@@ -2,6 +2,7 @@ import validator from 'validator';
 
 import CustomError from '../utils/errorHandling.js';
 import * as postService from '../services/postService.js';
+import * as tagService from '../services/tagService.js';
 
 export async function getPost(req, res, next) {
     const postId = Number(req.params.postId);
@@ -32,15 +33,37 @@ export async function postPost(req, res, next) {
         if (parentId !== undefined && (parentId === null || Number.isNaN(Number(parentId)) || Number(parentId) < 1))
             throw new CustomError('No valid parent id is provided', 400);
 
-        if (title !== undefined && !validator.isAscii(title))
-            throw new CustomError('No valid title is provided', 400);
+        let titleTrimmed = "";
+        if (title !== undefined) {
+            if (!validator.isAscii(title))
+                throw new CustomError('No valid title is provided', 400);
 
-        if (!content || !validator.isAscii(content))
-            throw new CustomError('No valid content is provided', 400);
+            titleTrimmed = title.trim();
+
+            if (titleTrimmed.length > 255)
+                throw new CustomError('Title is too long', 400);
+        }
+
+        let contentTrimmed = null;
+        if (!content) {
+            if (!validator.isAscii(content))
+                throw new CustomError('No valid content is provided', 400);
+
+            contentTrimmed = content.trim();
+
+            if (contentTrimmed.length > 1000)
+                throw new CustomError('Content is too long', 400);
+        }
+
+        const tagsResult = await tagService.exportPostTags(
+            titleTrimmed,
+            contentTrimmed
+        );
 
         const postPostResult = await postService.postPost(
-            title ?? "",
-            content,
+            titleTrimmed,
+            contentTrimmed,
+            tagsResult,
             req.userId,
             parentId ?? null
         );
