@@ -16,7 +16,7 @@ router.get('/:postId', getPostComments);
 
 router.post('/', postPostComment);
 
-router.patch('/:commentId', updatePostComment);
+router.put('/:commentId', updatePostComment);
 
 router.delete('/:commentId', deletePostComment);
 

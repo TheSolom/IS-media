@@ -18,7 +18,7 @@ router.get('/:postId', getPost);
 
 router.post('/', postPost);
 
-router.patch('/:postId', updatePost);
+router.put('/:postId', updatePost);
 
 router.delete('/:postId', deletePost);
 

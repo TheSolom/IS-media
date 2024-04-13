@@ -14,7 +14,7 @@ router.use(authMiddleware);
 
 router.get('/profile/:userId', getUser);
 
-router.patch('/profile', updateUserValidation, updateUser);
+router.put('/profile', updateUserValidation, updateUser);
 
 router.get('/search/:username', searchUser);
 
