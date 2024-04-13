@@ -1,5 +1,7 @@
 import PostModel from '../models/postModel.js';
 import { postPostTags, deletePostTags } from './postTagsService.js';
+import { putUserTag } from './UserTagsService.js';
+
 import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
 
@@ -30,14 +32,11 @@ export const getPost = async (postId) => {
     }
 };
 
-export const postPost = async (title, content, authorId, parentId) => {
-    const titleNormalized = title.trim();
-    const contentNormalized = content.trim();
-
+export const postPost = async (title, content, tags, authorId, parentId) => {
     const postModel = new PostModel();
 
     try {
-        const createPostResult = await postModel.create({ title: titleNormalized, content: contentNormalized, author_id: authorId, parent_id: parentId });
+        const createPostResult = await postModel.create({ title, content, author_id: authorId, parent_id: parentId });
 
         if (!createPostResult.affectedRows)
             return {
@@ -46,7 +45,7 @@ export const postPost = async (title, content, authorId, parentId) => {
                 status: 500,
             };
 
-        const createTagsResult = await postPostTags(titleNormalized, contentNormalized, createPostResult.insertId);
+        const createTagsResult = await postPostTags(tags, createPostResult.insertId);
 
         if (!createTagsResult.success) {
             await postModel.delete({ id: createPostResult.insertId });
@@ -55,8 +54,22 @@ export const postPost = async (title, content, authorId, parentId) => {
                 success: false,
                 message: createTagsResult.status === 400 ?
                     createTagsResult.message : 'An error occurred while creating the post',
-                status: createTagsResult.status
+                status: createTagsResult.status,
             };
+        }
+
+        if (createTagsResult.tagsIds.length) {
+            const putUsedTagsResult = await putUserTag(createTagsResult.tagsIds, authorId);
+
+            if (!putUsedTagsResult.success) {
+                await postModel.delete({ id: createPostResult.insertId });
+
+                return {
+                    success: false,
+                    message: 'An error occurred while creating the post',
+                    status: 500,
+                };
+            }
         }
 
         return {
