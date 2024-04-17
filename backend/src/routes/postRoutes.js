@@ -1,18 +1,22 @@
 import express from 'express';
 
 import {
+    getUserPosts,
+    getFeedPosts,
     getPost,
     postPost,
     updatePost,
     deletePost,
-    getFeedPosts,
-    getUserPosts,
 } from '../controllers/postController.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 router.use(authMiddleware);
+
+router.get('/user', getUserPosts);
+
+router.get('/feed', getFeedPosts);
 
 router.get('/:postId', getPost);
 
@@ -21,9 +25,5 @@ router.post('/', postPost);
 router.put('/:postId', updatePost);
 
 router.delete('/:postId', deletePost);
-
-router.get('/feed', getFeedPosts);
-
-router.get('/user', getUserPosts);
 
 export default router;
