@@ -51,7 +51,6 @@ export const postPostLike = async (postId, userId) => {
 };
 
 export const deletePostLike = async (postId, userId) => {
-    console.log('deletePostLike', postId, userId);
     const postLikesModel = new PostLikesModel();
 
     try {
