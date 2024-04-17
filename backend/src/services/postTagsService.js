@@ -50,9 +50,9 @@ export const getTagPosts = async (tag, lastId, limit) => {
 export const postPostTags = async (tags, postId) => {
     if (!tags || !tags.length) {
         return {
-            success: true,
-            message: 'No tags in the post',
-            status: 404,
+            success: false,
+            message: 'No tags provided',
+            status: 400,
         };
     }
 
@@ -65,7 +65,7 @@ export const postPostTags = async (tags, postId) => {
             const tagNormalized = tag.substring(1).toLowerCase();
 
             if (!validator.isAlphanumeric(tagNormalized))
-                return Promise.reject(new CustomError(`Tag '${tag}' is not valid, should be alphanumeric`, 400));
+                return Promise.resolve();
 
             const [tagRow] = await tagsModel.find({ tag: tagNormalized });
 
@@ -84,28 +84,10 @@ export const postPostTags = async (tags, postId) => {
 
         const createPostTagsResults = await Promise.allSettled(createTagsPromises);
 
-        const rejectedPromises = [];
-        let hasCustomError = false;
-
-        createPostTagsResults.forEach(result => {
-            if (result.status === 'rejected') {
-                rejectedPromises.push(result);
-
-                if (result.reason && result.reason.status === 400)
-                    hasCustomError = true;
-            }
-        });
+        const rejectedPromises = createPostTagsResults.filter(result => result.status === 'rejected');
 
         if (rejectedPromises.length) {
             console.error('Some tags failed to be added:', rejectedPromises);
-            if (hasCustomError) {
-                return {
-                    success: false,
-                    message: rejectedPromises[0].reason.message,
-                    status: rejectedPromises[0].reason.status,
-                };
-            }
-
             return {
                 success: false,
                 message: 'Failed to add some tags to the post',
