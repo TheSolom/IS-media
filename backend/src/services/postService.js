@@ -1,6 +1,7 @@
 import PostModel from '../models/postModel.js';
+import PostTagsModel from '../models/postTagsModel.js';
 import { postPostTags, deletePostTags } from './postTagsService.js';
-import { putUserTag } from './UserTagsService.js';
+import { putUserTag, deleteUserTag } from './userTagsService.js';
 
 import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
@@ -47,19 +48,20 @@ export const postPost = async (title, content, tags, authorId, parentId) => {
 
         const createTagsResult = await postPostTags(tags, createPostResult.insertId);
 
-        if (!createTagsResult.success) {
+        if (!createTagsResult.success && createTagsResult.status !== 400) {
             await postModel.delete({ id: createPostResult.insertId });
 
             return {
                 success: false,
-                message: createTagsResult.status === 400 ?
-                    createTagsResult.message : 'An error occurred while creating the post',
-                status: createTagsResult.status,
+                message: 'An error occurred while creating the post',
+                status: 500,
             };
         }
 
-        if (createTagsResult.tagsIds.length) {
-            const putUsedTagsResult = await putUserTag(createTagsResult.tagsIds, authorId);
+        const { tagsIds } = createTagsResult;
+
+        if (tagsIds && tagsIds.length) {
+            const putUsedTagsResult = await putUserTag(tagsIds, authorId);
 
             if (!putUsedTagsResult.success) {
                 await postModel.delete({ id: createPostResult.insertId });
@@ -86,11 +88,9 @@ export const postPost = async (title, content, tags, authorId, parentId) => {
     }
 };
 
-export const updatePost = async (title, content, postId, authorId) => {
-    const titleNormalized = title.trim();
-    const contentNormalized = content.trim();
-
+export const updatePost = async (title, content, tags, postId, authorId) => {
     const postModel = new PostModel();
+    const postTagsModel = new PostTagsModel();
 
     try {
         const [postRow] = await postModel.find({ id: postId, author_id: authorId });
@@ -102,12 +102,28 @@ export const updatePost = async (title, content, postId, authorId) => {
                 status: 404,
             };
 
-        if (postRow[0].title === titleNormalized && postRow[0].content === contentNormalized)
+        if (postRow[0].title === title && postRow[0].content === content)
             return {
                 success: false,
                 message: 'No changes detected',
                 status: 200
             };
+
+        const [postTagsRows] = await postTagsModel.find({ post_id: postId });
+
+        if (postTagsRows.length) {
+            const deleteUsedTagsResult = await deleteUserTag(postTagsRows, authorId);
+
+            if (!deleteUsedTagsResult.success) {
+                await postModel.update({ title: postRow[0].title, content: postRow[0].content }, { id: postId });
+
+                return {
+                    success: false,
+                    message: 'An error occurred while updating the post',
+                    status: 500,
+                };
+            }
+        }
 
         const deletePostTagsResult = await deletePostTags(postId);
 
@@ -118,22 +134,39 @@ export const updatePost = async (title, content, postId, authorId) => {
                 status: 500,
             };
 
-        const updateResult = await postModel.update({ title: titleNormalized, content: contentNormalized }, { id: postId });
+        const updateResult = await postModel.update({ title, content }, { id: postId });
 
-        const createTagsResult = await postPostTags(titleNormalized, contentNormalized, postId);
+        if (tags) {
+            const createTagsResult = await postPostTags(tags, postId);
 
-        if (!createTagsResult.success) {
-            await postModel.update({ title: postRow[0].title, content: postRow[0].content }, { id: postId });
+            if (!createTagsResult.success && createTagsResult.status !== 400) {
+                await postModel.update({ title: postRow[0].title, content: postRow[0].content }, { id: postId });
 
-            return {
-                success: false,
-                message: createTagsResult.status === 400 ?
-                    createTagsResult.message : 'An error occurred while updating the post',
-                status: createTagsResult.status
-            };
+                return {
+                    success: false,
+                    message: 'An error occurred while updating the post',
+                    status: 500
+                };
+            }
+
+            const { tagsIds } = createTagsResult;
+
+            if (tagsIds && tagsIds.length) {
+                const putUsedTagsResult = await putUserTag(tagsIds, authorId);
+
+                if (!putUsedTagsResult.success) {
+                    await postModel.delete({ id: postId });
+
+                    return {
+                        success: false,
+                        message: 'An error occurred while updating the post',
+                        status: 500,
+                    };
+                }
+            }
         }
 
-        if (isValidUrl(postRow[0].content) && postRow[0].content !== contentNormalized)
+        if (isValidUrl(postRow[0].content) && postRow[0].content !== content)
             await deleteMedia(postRow[0], 'content');
 
         return {
