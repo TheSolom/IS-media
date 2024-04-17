@@ -4,6 +4,73 @@ import CustomError from '../utils/errorHandling.js';
 import * as postService from '../services/postService.js';
 import * as tagService from '../services/tagService.js';
 
+export async function getUserPosts(req, res, next) {
+    const { userId, lastId, limit } = req.query;
+
+    try {
+        if (userId !== undefined && (userId === null || Number.isNaN(Number(userId)) || Number(userId) < 1))
+            throw new CustomError('No valid user id is provided', 400);
+
+        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
+            throw new CustomError('No valid last id is provided', 400);
+
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
+            throw new CustomError('No valid limit is provided', 400);
+
+        const getUserPostsResult = await postService.getUserPosts(
+            userId ?? req.userId,
+            lastId ?? 0,
+            limit ?? 10
+        );
+
+        if (!getUserPostsResult.success)
+            throw new CustomError(
+                getUserPostsResult.message,
+                getUserPostsResult.status
+            );
+
+        res.status(getUserPostsResult.posts.length ? 200 : 204).json({
+            success: true,
+            lastId: getUserPostsResult.lastId,
+            posts: getUserPostsResult.posts
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getFeedPosts(req, res, next) {
+    const { lastId, limit } = req.query;
+
+    try {
+        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
+            throw new CustomError('No valid last id is provided', 400);
+
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
+            throw new CustomError('No valid limit is provided', 400);
+
+        const getFeedPostsResult = await postService.getFeedPosts(
+            req.userId,
+            lastId ?? 0,
+            limit ?? 10
+        );
+
+        if (!getFeedPostsResult.success)
+            throw new CustomError(
+                getFeedPostsResult.message,
+                getFeedPostsResult.status
+            );
+
+        res.status(getFeedPostsResult.posts.length ? 200 : 204).json({
+            success: true,
+            lastId: getFeedPostsResult.lastId,
+            posts: getFeedPostsResult.posts,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function getPost(req, res, next) {
     const postId = Number(req.params.postId);
 
@@ -44,16 +111,13 @@ export async function postPost(req, res, next) {
                 throw new CustomError('Title is too long', 400);
         }
 
-        let contentTrimmed = null;
-        if (!content) {
-            if (!validator.isAscii(content))
-                throw new CustomError('No valid content is provided', 400);
+        if (!content || !validator.isAscii(content))
+            throw new CustomError('No valid content is provided', 400);
 
-            contentTrimmed = content.trim();
+        const contentTrimmed = content.trim();
 
-            if (contentTrimmed.length > 1000)
-                throw new CustomError('Content is too long', 400);
-        }
+        if (contentTrimmed.length > 1000)
+            throw new CustomError('Content is too long', 400);
 
         const tagsResult = await tagService.exportPostTags(
             titleTrimmed,
@@ -97,23 +161,26 @@ export async function updatePost(req, res, next) {
                 throw new CustomError('Title is too long', 400);
         }
 
-        let contentTrimmed = null;
-        if (!content) {
-            if (!validator.isAscii(content))
-                throw new CustomError('No valid content is provided', 400);
+        if (!content || !validator.isAscii(content))
+            throw new CustomError('No valid content is provided', 400);
 
-            contentTrimmed = content.trim();
+        const contentTrimmed = content.trim();
 
-            if (contentTrimmed.length > 1000)
-                throw new CustomError('Content is too long', 400);
-        }
+        if (contentTrimmed.length > 1000)
+            throw new CustomError('Content is too long', 400);
 
         if (!postId || postId < 1)
             throw new CustomError('No valid post id is provided', 400);
 
+        const tagsResult = await tagService.exportPostTags(
+            titleTrimmed,
+            contentTrimmed
+        );
+
         const updatePostResult = await postService.updatePost(
             titleTrimmed,
             contentTrimmed,
+            tagsResult,
             postId,
             req.userId
         );
@@ -154,73 +221,6 @@ export async function deletePost(req, res, next) {
         res.status(200).json({
             success: true,
             message: 'Successfully deleted post',
-        });
-    } catch (error) {
-        next(error);
-    }
-}
-
-export async function getFeedPosts(req, res, next) {
-    const { lastId, limit } = req.query;
-
-    try {
-        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
-            throw new CustomError('No valid last id is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
-
-        const getFeedPostsResult = await postService.getFeedPosts(
-            req.userId,
-            lastId ?? 0,
-            limit ?? 10
-        );
-
-        if (!getFeedPostsResult.success)
-            throw new CustomError(
-                getFeedPostsResult.message,
-                getFeedPostsResult.status
-            );
-
-        res.status(getFeedPostsResult.posts.length ? 200 : 204).json({
-            success: true,
-            lastId: getFeedPostsResult.lastId,
-            posts: getFeedPostsResult.posts,
-        });
-    } catch (error) {
-        next(error);
-    }
-}
-
-export async function getUserPosts(req, res, next) {
-    const { userId, lastId, limit } = req.query;
-
-    try {
-        if (userId !== undefined && (userId === null || Number.isNaN(Number(userId)) || Number(userId) < 1))
-            throw new CustomError('No valid user id is provided', 400);
-
-        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
-            throw new CustomError('No valid last id is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
-
-        const getUserPostsResult = await postService.getUserPosts(
-            userId ?? req.userId,
-            lastId ?? 0,
-            limit ?? 10
-        );
-
-        if (!getUserPostsResult.success)
-            throw new CustomError(
-                getUserPostsResult.message,
-                getUserPostsResult.status
-            );
-
-        res.status(getUserPostsResult.posts.length ? 200 : 204).json({
-            success: true,
-            lastId: getUserPostsResult.lastId,
-            posts: getUserPostsResult.posts
         });
     } catch (error) {
         next(error);
