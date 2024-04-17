@@ -25,7 +25,7 @@ export const getUsedTags = async (userId, limit) => {
 };
 
 export const putUserTag = async (tagsIds, userId) => {
-    if (!tagsIds) {
+    if (!tagsIds || !tagsIds.length) {
         return {
             success: false,
             message: 'No tags provided',
@@ -36,13 +36,13 @@ export const putUserTag = async (tagsIds, userId) => {
     const userTagsModel = new UserTagsModel();
 
     try {
-        const createTagsPromises = tagsIds.map(async (tagId) =>
-            userTagsModel.createOrUpdateUsedTag(userId, tagId)
+        const incrementTagsPromises = tagsIds.map(async (tagId) =>
+            userTagsModel.incrementUsedTag(userId, tagId)
         );
 
-        const createOrUpdateTagsResults = await Promise.allSettled(createTagsPromises);
+        const incrementTagsResults = await Promise.allSettled(incrementTagsPromises);
 
-        const rejectedPromises = createOrUpdateTagsResults.filter(
+        const rejectedPromises = incrementTagsResults.filter(
             (promise) => promise.status === 'rejected'
         );
 
@@ -64,6 +64,51 @@ export const putUserTag = async (tagsIds, userId) => {
         return {
             success: false,
             message: 'An error occurred while adding user tags',
+            status: 500,
+        };
+    }
+};
+
+export const deleteUserTag = async (tagsRows, userId) => {
+    if (!tagsRows || !tagsRows.length) {
+        return {
+            success: false,
+            message: 'No tags provided',
+            status: 400,
+        };
+    }
+
+    const userTagsModel = new UserTagsModel();
+
+    try {
+        const decrementTagsPromises = tagsRows.map(async ({ tag_id: tagId }) =>
+            userTagsModel.decrementUsedTag(userId, tagId)
+        );
+
+        const decrementTagsResults = await Promise.allSettled(decrementTagsPromises);
+
+        const rejectedPromises = decrementTagsResults.filter(
+            (promise) => promise.status === 'rejected'
+        );
+
+        if (rejectedPromises.length) {
+            console.error('Some user tags failed to be deleted:', rejectedPromises);
+            return {
+                success: false,
+                message: 'Failed to delete some user tags',
+                status: 500,
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Successfully deleted user tags',
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while deleting user tags',
             status: 500,
         };
     }
