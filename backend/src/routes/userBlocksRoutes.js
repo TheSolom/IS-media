@@ -12,9 +12,9 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/:userId', getUserBlockStatus);
-
 router.get('/', getUserBlocks);
+
+router.get('/:userId', getUserBlockStatus);
 
 router.post('/', postUserBlock);
 
