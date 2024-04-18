@@ -81,9 +81,12 @@ export const deleteUserTag = async (tagsRows, userId) => {
     const userTagsModel = new UserTagsModel();
 
     try {
-        const decrementTagsPromises = tagsRows.map(async ({ tag_id: tagId }) =>
-            userTagsModel.decrementUsedTag(userId, tagId)
-        );
+        const decrementTagsPromises = tagsRows.map(async ({ tag_id: tagId }) => {
+            const [{ affectedRows }] = await userTagsModel.decrementUsedTag(userId, tagId);
+
+            if (affectedRows)
+                await userTagsModel.delete({ user_id: userId, tag_id: tagId, count: 0 });
+        });
 
         const decrementTagsResults = await Promise.allSettled(decrementTagsPromises);
 
