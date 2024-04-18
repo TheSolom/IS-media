@@ -166,7 +166,7 @@ export async function updatePost(req, res, next) {
 
         const contentTrimmed = content.trim();
 
-        if (contentTrimmed.length > 1000)
+        if (contentTrimmed.length > 500)
             throw new CustomError('Content is too long', 400);
 
         if (!postId || postId < 1)
