@@ -3,17 +3,16 @@ import * as postCommentsService from '../services/postCommentsService.js';
 
 export async function getPostComments(req, res, next) {
     const postId = Number(req.params.postId);
-    const { lastId } = req.query;
-    const { limit } = req.query;
+    const { lastId, limit } = req.query;
 
     try {
         if (!postId || postId < 1)
             throw new CustomError('No valid post id is provided', 400);
 
-        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
             throw new CustomError('No valid last id is provided', 400);
 
-        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
         const getPostCommentsResult = await postCommentsService.getPostComments(
@@ -39,14 +38,29 @@ export async function postPostComment(req, res, next) {
     const { title, content, postId } = req.body;
 
     try {
+        let titleTrimmed = "";
+
+        if (title !== undefined) {
+            titleTrimmed = title.trim();
+
+            if (titleTrimmed.length > 100)
+                throw new CustomError('Title must be at most 100 characters', 400);
+        }
+
         if (!content)
-            throw new CustomError('No content is provided', 400);
+            throw new CustomError('No valid content is provided', 400);
+
+        const contentTrimmed = content.trim();
+
+        if (contentTrimmed.length > 100)
+            throw new CustomError('Content must be at most 100 characters', 400);
+
         if (!postId)
             throw new CustomError('No post id is provided', 400);
 
         const postPostCommentResult = await postCommentsService.postPostComment(
-            title ?? "",
-            content,
+            titleTrimmed,
+            contentTrimmed,
             req.userId,
             postId
         );
@@ -65,19 +79,33 @@ export async function postPostComment(req, res, next) {
 }
 
 export async function updatePostComment(req, res, next) {
-    const { title, content } = req.body;
     const commentId = Number(req.params.commentId);
+    const { title, content } = req.body;
 
     try {
+        let titleTrimmed = "";
+
+        if (title !== undefined) {
+            titleTrimmed = title.trim();
+
+            if (titleTrimmed.length > 100)
+                throw new CustomError('Title must be at most 100 characters', 400);
+        }
+
         if (!content)
-            throw new CustomError('No content is provided', 400);
+            throw new CustomError('No valid content is provided', 400);
+
+        const contentTrimmed = content.trim();
+
+        if (contentTrimmed.length > 100)
+            throw new CustomError('Content must be at most 100 characters', 400);
 
         if (!commentId || commentId < 1)
             throw new CustomError('No valid comment id is provided', 400);
 
         const updatePostCommentResult = await postCommentsService.updatePostComment(
-            title ?? "",
-            content,
+            titleTrimmed,
+            contentTrimmed,
             commentId,
             req.userId
         );
