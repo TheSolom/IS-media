@@ -117,7 +117,7 @@ export async function postPost(req, res, next) {
 
         const contentTrimmed = content.trim();
 
-        if (contentTrimmed.length > 1000)
+        if (contentTrimmed.length > 500)
             throw new CustomError('Content is too long', 400);
 
         const tagsResult = await tagService.exportPostTags(
@@ -152,7 +152,7 @@ export async function updatePost(req, res, next) {
 
     try {
         let titleTrimmed = "";
-        
+
         if (title !== undefined) {
             if (!validator.isAscii(title))
                 throw new CustomError('No valid title is provided', 400);
