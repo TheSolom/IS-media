@@ -183,14 +183,47 @@ export const updatePost = async (title, content, tags, postId, authorId) => {
 
 export const deletePost = async (postId, authorId) => {
     const postModel = new PostModel();
+    const postTagsModel = new PostTagsModel();
 
     try {
+        const [postRow] = await postModel.find({ id: postId, author_id: authorId });
+
+        if (!postRow.length)
+            return {
+                success: false,
+                message: `No post found with id '${postId}' `,
+                status: 404,
+            };
+
+        const [postTagsRows] = await postTagsModel.find({ post_id: postId });
+
+        if (postTagsRows.length) {
+            const deleteUsedTagsResult = await deleteUserTag(postTagsRows, authorId);
+
+            if (!deleteUsedTagsResult.success) {
+                return {
+                    success: false,
+                    message: 'An error occurred while deleting the post',
+                    status: 500,
+                };
+            }
+        }
+
+        const deletePostTagsResult = await deletePostTags(postId);
+
+        if (!deletePostTagsResult.success && deletePostTagsResult.status !== 404)
+            return {
+                success: false,
+                message: 'An error occurred while deleting the post',
+                status: 500,
+            };
+
         const deleteResult = await postModel.delete({ id: postId, author_id: authorId });
 
         if (!deleteResult.affectedRows)
             return {
                 success: false,
-                message: `No post found with id '${postId}' for user with id '${authorId}' `,
+                message: `No post found with id '${postId}'`,
                 status: 404,
             };
 
