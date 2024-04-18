@@ -126,17 +126,17 @@ export async function getUserFollowSuggestions(req, res, next) {
         if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
-        const getUserFollowSuggestionsResult = await userFollowsService.getUserFollowSuggestions(
+        const getSuggestionsResult = await userFollowsService.getUserFollowSuggestions(
             req.userId,
             limit ?? 10
         );
 
-        if (!getUserFollowSuggestionsResult.success)
-            throw new CustomError(getUserFollowSuggestionsResult.message, getUserFollowSuggestionsResult.status);
+        if (!getSuggestionsResult.success)
+            throw new CustomError(getSuggestionsResult.message, getSuggestionsResult.status);
 
-        res.status(getUserFollowSuggestionsResult.users.length ? 200 : 204).json({
+        res.status(getSuggestionsResult.users.length ? 200 : 204).json({
             success: true,
-            users: getUserFollowSuggestionsResult.users,
+            users: getSuggestionsResult.users,
         });
     } catch (error) {
         next(error);
