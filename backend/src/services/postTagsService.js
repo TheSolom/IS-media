@@ -17,7 +17,7 @@ export const getPostTags = async (postId) => {
         console.error(error);
         return {
             success: false,
-            message: 'An error occurred while fetching the posts',
+            message: 'An error occurred while fetching the tags',
             status: 500,
         };
     }
