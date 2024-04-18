@@ -2,22 +2,20 @@ import CustomError from '../utils/errorHandling.js';
 import * as storyService from '../services/storyService.js';
 
 export async function getUserStories(req, res, next) {
-    const { active } = req.query;
-    const { lastId } = req.query;
-    const { limit } = req.query;
+    const { active, lastId, limit } = req.query;
 
     try {
-        const onlyActive = (active !== undefined) ? Boolean(JSON.parse(active)) : undefined;
+        const onlyActiveStories = (active !== undefined) ? Boolean(JSON.parse(active)) : undefined;
 
-        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
             throw new CustomError('No valid last id is provided', 400);
 
-        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
         const getUserStoriesResult = await storyService.getUserStories(
             req.userId,
-            onlyActive,
+            onlyActiveStories,
             lastId ?? 0,
             limit ?? 10
         );
@@ -39,14 +37,13 @@ export async function getUserStories(req, res, next) {
 }
 
 export async function getFeedStories(req, res, next) {
-    const { lastId } = req.query;
-    const { limit } = req.query;
+    const { lastId, limit } = req.query;
 
     try {
-        if (lastId !== undefined && (Number.isNaN(lastId) || lastId === null || lastId < 0))
+        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
             throw new CustomError('No valid last id is provided', 400);
 
-        if (limit !== undefined && (Number.isNaN(limit) || limit === null || limit < 1))
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
             throw new CustomError('No valid limit is provided', 400);
 
         const getFeedStoriesResult = await storyService.getFeedStories(
@@ -99,8 +96,13 @@ export async function postStory(req, res, next) {
         if (!content)
             throw new CustomError('No content is provided', 400);
 
+        const contentTrimmed = content.trim();
+
+        if (contentTrimmed.length > 100)
+            throw new CustomError('Content must be at most 100 characters', 400);
+
         const postStoryResult = await storyService.postStory(
-            content,
+            contentTrimmed,
             req.userId
         );
 
