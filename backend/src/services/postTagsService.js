@@ -2,7 +2,6 @@ import validator from 'validator';
 
 import PostTagsModel from '../models/postTagsModel.js';
 import TagsModel from '../models/tagsModel.js';
-import CustomError from '../utils/errorHandling.js';
 
 export const getPostTags = async (postId) => {
     const postTagsModel = new PostTagsModel();
