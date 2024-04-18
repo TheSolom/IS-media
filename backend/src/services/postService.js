@@ -6,6 +6,52 @@ import { putUserTag, deleteUserTag } from './userTagsService.js';
 import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
 
+export const getUserPosts = async (userId, lastId, limit) => {
+    const postModel = new PostModel();
+
+    try {
+        const [postRows] = await postModel.findUserPosts(userId, lastId, limit);
+
+        const id = postRows[0] ? postRows[0].id : 0;
+
+        return {
+            success: true,
+            lastId: id,
+            posts: postRows
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while fetching the posts',
+            status: 500,
+        };
+    }
+};
+
+export const getFeedPosts = async (userId, lastId, limit) => {
+    const postModel = new PostModel();
+
+    try {
+        const [postRows] = await postModel.findFeedPosts(userId, lastId, limit);
+
+        const id = postRows[0] ? postRows[0].id : 0;
+
+        return {
+            success: true,
+            lastId: id,
+            posts: postRows
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while fetching the stories',
+            status: 500,
+        };
+    }
+};
+
 export const getPost = async (postId) => {
     const postModel = new PostModel();
 
@@ -233,52 +279,6 @@ export const deletePost = async (postId, authorId) => {
         return {
             success: false,
             message: 'An error occurred while deleting the post',
-            status: 500,
-        };
-    }
-};
-
-export const getFeedPosts = async (userId, lastId, limit) => {
-    const postModel = new PostModel();
-
-    try {
-        const [postRows] = await postModel.findFeedPosts(userId, lastId, limit);
-
-        const id = postRows[0] ? postRows[0].id : 0;
-
-        return {
-            success: true,
-            lastId: id,
-            posts: postRows
-        };
-    } catch (error) {
-        console.error(error);
-        return {
-            success: false,
-            message: 'An error occurred while fetching the stories',
-            status: 500,
-        };
-    }
-};
-
-export const getUserPosts = async (userId, lastId, limit) => {
-    const postModel = new PostModel();
-
-    try {
-        const [postRows] = await postModel.findUserPosts(userId, lastId, limit);
-
-        const id = postRows[0] ? postRows[0].id : 0;
-
-        return {
-            success: true,
-            lastId: id,
-            posts: postRows
-        };
-    } catch (error) {
-        console.error(error);
-        return {
-            success: false,
-            message: 'An error occurred while fetching the posts',
             status: 500,
         };
     }
