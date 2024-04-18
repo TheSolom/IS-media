@@ -235,15 +235,15 @@ export const forgotPassword = async (emailOrUsername, MAX_AGE) => {
         };
     }
 
-    const resetUrl = `http://localhost:5000/reset-password/${token}`;
+    const resetUrl = `https://is-media.onrender.com/reset-password/${token}`;
 
     const mailOptions = {
         from: 'onboarding@resend.dev',
-        to: 'eslam.01212@gmail.com',
-        subject: 'ES Media Password reset',
+        to: userRow[0].email,
+        subject: 'IS Media Password reset',
         text: `You requested a password reset.
 
-      For reseting your password please click on the link below: 
+      For resetting your password please click on the link below: 
       ${resetUrl} 
       If you did not request a password reset, please ignore this email.`,
     };
