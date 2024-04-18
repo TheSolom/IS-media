@@ -115,8 +115,6 @@ export const updatePost = async (title, content, tags, postId, authorId) => {
             const deleteUsedTagsResult = await deleteUserTag(postTagsRows, authorId);
 
             if (!deleteUsedTagsResult.success) {
-                await postModel.update({ title: postRow[0].title, content: postRow[0].content }, { id: postId });
-
                 return {
                     success: false,
                     message: 'An error occurred while updating the post',
