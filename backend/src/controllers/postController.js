@@ -101,6 +101,7 @@ export async function postPost(req, res, next) {
             throw new CustomError('No valid parent id is provided', 400);
 
         let titleTrimmed = "";
+
         if (title !== undefined) {
             if (!validator.isAscii(title))
                 throw new CustomError('No valid title is provided', 400);
@@ -151,6 +152,7 @@ export async function updatePost(req, res, next) {
 
     try {
         let titleTrimmed = "";
+        
         if (title !== undefined) {
             if (!validator.isAscii(title))
                 throw new CustomError('No valid title is provided', 400);
