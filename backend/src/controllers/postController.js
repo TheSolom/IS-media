@@ -1,5 +1,3 @@
-import validator from 'validator';
-
 import CustomError from '../utils/errorHandling.js';
 import * as postService from '../services/postService.js';
 import * as tagService from '../services/tagService.js';
@@ -103,22 +101,19 @@ export async function postPost(req, res, next) {
         let titleTrimmed = "";
 
         if (title !== undefined) {
-            if (!validator.isAscii(title))
-                throw new CustomError('No valid title is provided', 400);
-
             titleTrimmed = title.trim();
 
             if (titleTrimmed.length > 255)
-                throw new CustomError('Title is too long', 400);
+                throw new CustomError('Title must be at most 255 characters', 400);
         }
 
-        if (!content || !validator.isAscii(content))
+        if (!content)
             throw new CustomError('No valid content is provided', 400);
 
         const contentTrimmed = content.trim();
 
         if (contentTrimmed.length > 500)
-            throw new CustomError('Content is too long', 400);
+            throw new CustomError('Content must be at most 500 characters', 400);
 
         const tagsResult = await tagService.exportPostTags(
             titleTrimmed,
@@ -154,22 +149,19 @@ export async function updatePost(req, res, next) {
         let titleTrimmed = "";
 
         if (title !== undefined) {
-            if (!validator.isAscii(title))
-                throw new CustomError('No valid title is provided', 400);
-
             titleTrimmed = title.trim();
 
             if (titleTrimmed.length > 255)
-                throw new CustomError('Title is too long', 400);
+                throw new CustomError('Title must be at most 255 characters', 400);
         }
 
-        if (!content || !validator.isAscii(content))
+        if (!content)
             throw new CustomError('No valid content is provided', 400);
 
         const contentTrimmed = content.trim();
 
         if (contentTrimmed.length > 500)
-            throw new CustomError('Content is too long', 400);
+            throw new CustomError('Content must be at most 500 characters', 400);
 
         if (!postId || postId < 1)
             throw new CustomError('No valid post id is provided', 400);
