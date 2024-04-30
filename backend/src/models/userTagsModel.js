@@ -6,13 +6,27 @@ export default class UserTagsModel extends BaseModel {
         super('user_tags');
     }
 
-    async findUsedTags(userId, limit) {
-        const query = `SELECT * FROM ${this.getTableName()}
-                        WHERE user_id = ?
-                        ORDER BY count DESC
-                        limit ?`;
+    async findMostUsedTags(userId, limit) {
+        const query = `SELECT
+                            tag_id,
+                            count,
+                            (count / total_tags.total_count) AS probability
+                        FROM
+                            ${this.getTableName()}
+                        JOIN (
+                            SELECT SUM(count) AS total_count
+                            FROM ${this.getTableName()}
+                            WHERE user_id = ?
+                        ) AS total_tags
+                        WHERE
+                            user_id = ?
+                        GROUP BY
+                            tag_id, count, probability
+                        ORDER BY
+                            count DESC
+                        LIMIT ?`;
 
-        const result = await connection.execute(query, [userId, limit.toString()]);
+        const result = await connection.execute(query, [userId, userId, limit.toString()]);
         return result;
     }
 
