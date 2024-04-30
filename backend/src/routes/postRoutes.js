@@ -3,6 +3,7 @@ import express from 'express';
 import {
     getUserPosts,
     getFeedPosts,
+    getSuggestedPosts,
     getPost,
     postPost,
     updatePost,
@@ -17,6 +18,8 @@ router.use(authMiddleware);
 router.get('/user', getUserPosts);
 
 router.get('/feed', getFeedPosts);
+
+router.get('/suggestions', getSuggestedPosts);
 
 router.get('/:postId', getPost);
 
