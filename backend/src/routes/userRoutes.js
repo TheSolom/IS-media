@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/profile/:userId', getUser);
+router.get('/:userId/profile', getUser);
 
 router.put('/profile', updateUserValidation, updateUser);
 
