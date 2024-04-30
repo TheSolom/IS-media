@@ -1,7 +1,7 @@
 import express from 'express';
 
 import {
-    getUsedTags,
+    getMostUsedTags,
 } from '../controllers/userTagsController.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/', getUsedTags);
+router.get('/most-used-tags', getMostUsedTags);
 
 export default router;
