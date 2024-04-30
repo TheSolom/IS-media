@@ -10,8 +10,8 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/post/:postId', getPostTags);
+router.get('/:postId/tags', getPostTags);
 
-router.get('/tag/:tag', getTagPosts);
+router.get('/tags/:tag', getTagPosts);
 
 export default router;
