@@ -1,6 +1,7 @@
 import CustomError from '../utils/errorHandling.js';
 import * as postService from '../services/postService.js';
 import * as tagService from '../services/tagService.js';
+import * as userTagsService from '../services/userTagsService.js';
 
 export async function getUserPosts(req, res, next) {
     const { userId, lastId, limit } = req.query;
@@ -63,6 +64,47 @@ export async function getFeedPosts(req, res, next) {
             success: true,
             lastId: getFeedPostsResult.lastId,
             posts: getFeedPostsResult.posts,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getSuggestedPosts(req, res, next) {
+    const { limit } = req.query;
+
+    try {
+        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
+            throw new CustomError('No valid limit is provided', 400);
+
+        const getMostUsedTagsResult = await userTagsService.getMostUsedTags(
+            req.userId,
+            limit ?? 5
+        );
+
+        if (!getMostUsedTagsResult.success)
+            throw new CustomError(
+                getMostUsedTagsResult.message,
+                getMostUsedTagsResult.status
+            );
+
+        const { tags: tagsRows } = getMostUsedTagsResult;
+
+        const getSuggestedPostsResult = await postService.getSuggestedPosts(
+            tagsRows,
+            req.userId,
+            limit ?? 5
+        );
+
+        if (!getSuggestedPostsResult.success)
+            throw new CustomError(
+                getSuggestedPostsResult.message,
+                getSuggestedPostsResult.status
+            );
+
+        res.status(getSuggestedPostsResult.posts.length ? 200 : 204).json({
+            success: true,
+            posts: getSuggestedPostsResult.posts,
         });
     } catch (error) {
         next(error);

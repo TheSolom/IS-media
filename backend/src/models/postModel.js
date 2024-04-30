@@ -70,4 +70,28 @@ export default class PostModel extends BaseModel {
         const result = await connection.execute(query, [userId, lastId, limit.toString()]);
         return result;
     }
+
+    async findSuggestedPosts(tagsIds, userId, limit) {
+        const tagPlaceholders = tagsIds.map(() => '?').join(',');
+
+        const query = `SELECT
+                            ${this.getTableName()}.*
+                        FROM
+                            ${this.getTableName()}
+                        JOIN post_tags AS pt
+                            ON pt.post_id = ${this.getTableName()}.id
+                        LEFT JOIN post_likes AS pl
+                            ON pl.post_id = ${this.getTableName()}.id
+                        WHERE
+                            pt.tag_id IN (${tagPlaceholders})
+                            AND ${this.getTableName()}.author_id != ?
+                        GROUP BY
+                            ${this.getTableName()}.id
+                        ORDER BY
+                            COUNT(pl.post_id) DESC
+                        LIMIT ?`;
+
+        const result = await connection.execute(query, [...tagsIds, userId, limit.toString()]);
+        return result;
+    }
 }
