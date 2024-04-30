@@ -1,19 +1,22 @@
 import UserTagsModel from '../models/userTagsModel.js';
 
-export const getUsedTags = async (userId, limit) => {
+export const getMostUsedTags = async (userId, limit) => {
     const userTagsModel = new UserTagsModel();
 
     try {
-        const [usedTagsRows] = await userTagsModel.findUsedTags(userId, limit);
+        const [mostUsedTagsRows] = await userTagsModel.findMostUsedTags(userId, limit);
 
-        if (!usedTagsRows.length)
+        if (!mostUsedTagsRows.length)
             return {
                 success: false,
                 message: 'No used tags found',
                 status: 404,
             };
 
-        return { success: true, tags: usedTagsRows };
+        return {
+            success: true,
+            tags: mostUsedTagsRows
+        };
     } catch (error) {
         console.error(error);
         return {
