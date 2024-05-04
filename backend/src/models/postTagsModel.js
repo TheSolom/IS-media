@@ -7,10 +7,14 @@ export default class PostTagsModel extends BaseModel {
     }
 
     async findPostTags(postId) {
-        const query = `SELECT ${this.getTableName()}.id, tags.tag, ${this.getTableName()}.created_at FROM ${this.getTableName()}
+        const query = `SELECT 
+                            ${this.getTableName()}.id, tags.id AS tag_id, tags.tag, ${this.getTableName()}.created_at 
+                        FROM 
+                            ${this.getTableName()}
                         JOIN tags
-                        ON tags.id = ${this.getTableName()}.tag_id
-                        WHERE ${this.getTableName()}.post_id = ?`;
+                            ON tags.id = ${this.getTableName()}.tag_id
+                        WHERE 
+                            ${this.getTableName()}.post_id = ?`;
 
         const result = await connection.execute(query, [postId]);
         return result;
