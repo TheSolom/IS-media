@@ -27,7 +27,7 @@ export const getMostUsedTags = async (userId, limit) => {
     }
 };
 
-export const putUserTag = async (tagsIds, userId) => {
+export const putUserTags = async (tagsIds, userId) => {
     if (!tagsIds || !tagsIds.length) {
         return {
             success: false,
@@ -72,8 +72,8 @@ export const putUserTag = async (tagsIds, userId) => {
     }
 };
 
-export const deleteUserTag = async (tagsRows, userId) => {
-    if (!tagsRows || !tagsRows.length) {
+export const deleteUserTags = async (tagsIds, userId) => {
+    if (!tagsIds || !tagsIds.length) {
         return {
             success: false,
             message: 'No tags provided',
@@ -84,11 +84,11 @@ export const deleteUserTag = async (tagsRows, userId) => {
     const userTagsModel = new UserTagsModel();
 
     try {
-        const decrementTagsPromises = tagsRows.map(async ({ tag_id: tagId }) => {
+        const decrementTagsPromises = tagsIds.map(async (tagId) => {
             const [{ affectedRows }] = await userTagsModel.decrementUsedTag(userId, tagId);
 
             if (affectedRows)
-                await userTagsModel.delete({ user_id: userId, tag_id: tagId, count: 0 });
+                await userTagsModel.delete({ user_id: userId, tag_id: tagId, count: 0 }); // Delete the tag if it is not used by the user
         });
 
         const decrementTagsResults = await Promise.allSettled(decrementTagsPromises);
