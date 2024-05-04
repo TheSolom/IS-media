@@ -9,6 +9,10 @@ import {
     updatePost,
     deletePost,
 } from '../controllers/postController.js';
+import {
+    createPostValidation,
+    updatePostValidation
+} from '../validations/postValidation.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -23,9 +27,9 @@ router.get('/suggestions', getSuggestedPosts);
 
 router.get('/:postId', getPost);
 
-router.post('/', postPost);
+router.post('/', createPostValidation, postPost);
 
-router.put('/:postId', updatePost);
+router.put('/:postId', updatePostValidation, updatePost);
 
 router.delete('/:postId', deletePost);
 
