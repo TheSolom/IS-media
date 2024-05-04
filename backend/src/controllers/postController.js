@@ -1,7 +1,11 @@
-import CustomError from '../utils/errorHandling.js';
 import * as postService from '../services/postService.js';
 import * as tagService from '../services/tagService.js';
+import * as postTagsService from '../services/postTagsService.js';
 import * as userTagsService from '../services/userTagsService.js';
+import CustomError from '../utils/errorHandling.js';
+import requestValidation from '../utils/requestValidation.js';
+import isValidUrl from '../utils/isValidUrl.js';
+import deleteMedia from '../utils/deleteMedia.js';
 
 export async function getUserPosts(req, res, next) {
     const { userId, lastId, limit } = req.query;
@@ -133,50 +137,52 @@ export async function getPost(req, res, next) {
 }
 
 export async function postPost(req, res, next) {
-    const { title, content } = req.body;
-    const { parentId } = req.query;
+    const { title, content, parentId } = req.body;
 
     try {
-        if (parentId !== undefined && (parentId === null || Number.isNaN(Number(parentId)) || Number(parentId) < 1))
-            throw new CustomError('No valid parent id is provided', 400);
-
-        let titleTrimmed = "";
-
-        if (title !== undefined) {
-            titleTrimmed = title.trim();
-
-            if (titleTrimmed.length > 255)
-                throw new CustomError('Title must be at most 255 characters', 400);
-        }
-
-        if (!content)
-            throw new CustomError('No valid content is provided', 400);
-
-        const contentTrimmed = content.trim();
-
-        if (contentTrimmed.length > 500)
-            throw new CustomError('Content must be at most 500 characters', 400);
-
-        const tagsResult = await tagService.exportPostTags(
-            titleTrimmed,
-            contentTrimmed
-        );
+        requestValidation(req);
 
         const postPostResult = await postService.postPost(
-            titleTrimmed,
-            contentTrimmed,
-            tagsResult,
+            title,
+            content,
             req.userId,
-            parentId ?? null
+            parentId
         );
 
         if (!postPostResult.success)
             throw new CustomError(postPostResult.message, postPostResult.status);
 
+        const { insertId: postId } = postPostResult.createResult;
+
+        const tags = await tagService.exportTags(
+            title,
+            content
+        );
+
+        if (tags) {
+            const createTagsResult = await postTagsService.postPostTags(tags, postId);
+
+            if (!createTagsResult.success) {
+                await postService.deletePost(postId, req.userId);
+
+                throw new CustomError('An error occurred while creating the post', 500);
+            }
+
+            const { tagsIds } = createTagsResult;
+
+            const putUsedTagsResult = await userTagsService.putUserTags(tagsIds, req.userId);
+
+            if (!putUsedTagsResult.success) {
+                await postService.deletePost(postId, req.userId);
+
+                throw new CustomError('An error occurred while creating the post', 500);
+            }
+        }
+
         res.status(201).json({
             success: true,
             message: 'Successfully created post',
-            postId: postPostResult.createPostResult.insertId,
+            postId,
         });
     } catch (error) {
         next(error);
@@ -188,37 +194,47 @@ export async function updatePost(req, res, next) {
     const postId = Number(req.params.postId);
 
     try {
-        let titleTrimmed = "";
+        requestValidation(req);
 
-        if (title !== undefined) {
-            titleTrimmed = title.trim();
+        const getPostResult = await postService.getPost(postId);
 
-            if (titleTrimmed.length > 255)
-                throw new CustomError('Title must be at most 255 characters', 400);
+        if (!getPostResult.success)
+            throw new CustomError(getPostResult.message, getPostResult.status);
+
+        const { post: currentPost } = getPostResult;
+
+        if (currentPost.author_id !== req.userId)
+            throw new CustomError('You are not allowed to update this post', 401);
+
+        if (currentPost.title === title && currentPost.content === content)
+            return res.status(200).json({
+                success: true,
+                message: 'No changes detected',
+            });
+
+        const getPostTagsResult = await postTagsService.getPostTags(postId);
+
+        if (!getPostTagsResult.success)
+            throw new CustomError(getPostTagsResult.message, getPostTagsResult.status);
+
+        const postTagsIds = getPostTagsResult.tags.map(tag => tag.tag_id);
+
+        if (postTagsIds.length) {
+            const deletePostTagsResult = await postTagsService.deletePostTags(postId, postTagsIds);
+
+            if (!deletePostTagsResult.success)
+                throw new CustomError('An error occurred while updating the post', 500);
+
+            const deleteUserTagsResult = await userTagsService.deleteUserTags(postTagsIds, req.userId);
+
+            if (!deleteUserTagsResult.success)
+                throw new CustomError('An error occurred while updating the post', 500);
         }
 
-        if (!content)
-            throw new CustomError('No valid content is provided', 400);
-
-        const contentTrimmed = content.trim();
-
-        if (contentTrimmed.length > 500)
-            throw new CustomError('Content must be at most 500 characters', 400);
-
-        if (!postId || postId < 1)
-            throw new CustomError('No valid post id is provided', 400);
-
-        const tagsResult = await tagService.exportPostTags(
-            titleTrimmed,
-            contentTrimmed
-        );
-
         const updatePostResult = await postService.updatePost(
-            titleTrimmed,
-            contentTrimmed,
-            tagsResult,
+            title,
+            content,
             postId,
-            req.userId
         );
 
         if (!updatePostResult.success)
@@ -227,7 +243,47 @@ export async function updatePost(req, res, next) {
                 updatePostResult.status
             );
 
-        res.status(updatePostResult.updateResult.affectedRows ? 200 : 204).json({
+        if (isValidUrl(currentPost.content) && currentPost.content !== content)
+            await deleteMedia(currentPost, 'content');
+
+        const newTags = await tagService.exportTags(
+            title,
+            content
+        );
+
+        if (newTags) {
+            const postPostTagsResult = await postTagsService.postPostTags(newTags, postId);
+
+            if (!postPostTagsResult.success) {
+                await postService.updatePost(
+                    currentPost.title,
+                    currentPost.content,
+                    postId,
+                );
+
+                throw new CustomError('An error occurred while updating the post', 500);
+            }
+
+            const { tagsIds: newTagsIds } = postPostTagsResult;
+
+            if (newTagsIds) {
+                const putUsedTagsResult = await userTagsService.putUserTags(newTagsIds, req.userId);
+
+                if (!putUsedTagsResult.success) {
+                    await postTagsService.deletePostTags(postId, newTagsIds);
+
+                    await postService.updatePost(
+                        currentPost.title,
+                        currentPost.content,
+                        postId,
+                    );
+
+                    throw new CustomError('An error occurred while updating the post', 500);
+                }
+            }
+        }
+
+        res.status(200).json({
             success: true,
             message: 'Successfully updated post',
         });
@@ -242,6 +298,35 @@ export async function deletePost(req, res, next) {
     try {
         if (!postId || postId < 1)
             throw new CustomError('No valid post id is provided', 400);
+
+        const getPostResult = await postService.getPost(postId);
+
+        if (!getPostResult.success)
+            throw new CustomError(getPostResult.message, getPostResult.status);
+
+        const { post: currentPost } = getPostResult;
+
+        if (currentPost.author_id !== req.userId)
+            throw new CustomError('You are not allowed to delete this post', 401);
+
+        const getPostTagsResult = await postTagsService.getPostTags(postId);
+
+        if (!getPostTagsResult.success)
+            throw new CustomError(getPostTagsResult.message, getPostTagsResult.status);
+
+        const postTagsIds = getPostTagsResult.tags.map(tag => tag.tag_id);
+
+        if (postTagsIds.length) {
+            const deletePostTagsResult = await postTagsService.deletePostTags(postId, postTagsIds);
+
+            if (!deletePostTagsResult.success)
+                throw new CustomError('An error occurred while deleting the post', 500);
+
+            const deleteUserTagsResult = await userTagsService.deleteUserTags(postTagsIds, req.userId);
+
+            if (!deleteUserTagsResult.success)
+                throw new CustomError('An error occurred while deleting the post', 500);
+        }
 
         const deletePostResult = await postService.deletePost(
             postId,
