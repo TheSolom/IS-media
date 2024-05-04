@@ -109,18 +109,40 @@ export const postPostTags = async (tags, postId) => {
     }
 };
 
-export const deletePostTags = async (postId) => {
+export const deletePostTags = async (postId, tagsIds) => {
     const postTagsModel = new PostTagsModel();
 
     try {
-        const deleteResult = postTagsModel.delete({ post_id: postId });
+        if (tagsIds) {
+            const deleteTagsPromises = tagsIds.map(async (tagId) =>
+                postTagsModel.delete({ post_id: postId, tag_id: tagId })
+            );
 
-        if (!deleteResult.affectedRows)
-            return {
-                success: false,
-                message: `No tags found for post with id '${postId}' `,
-                status: 404,
-            };
+            const deleteTagsResults = await Promise.allSettled(deleteTagsPromises);
+
+            const rejectedPromises = deleteTagsResults.filter(
+                (promise) => promise.status === 'rejected'
+            );
+
+            if (rejectedPromises.length) {
+                console.error('Some post tags failed to be deleted:', rejectedPromises);
+                return {
+                    success: false,
+                    message: 'Failed to delete some post tags',
+                    status: 500,
+                };
+            }
+        }
+        else {
+            const deleteResult = postTagsModel.delete({ post_id: postId });
+
+            if (!deleteResult.affectedRows)
+                return {
+                    success: false,
+                    message: `No tags found for post with id '${postId}' `,
+                    status: 404,
+                };
+        }
 
         return { success: true };
     } catch (error) {
