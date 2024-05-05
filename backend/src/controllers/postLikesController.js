@@ -1,5 +1,7 @@
 import CustomError from '../utils/errorHandling.js';
 import * as postLikesService from '../services/postLikesService.js';
+import * as postTagsService from '../services/postTagsService.js';
+import * as userTagsService from '../services/userTagsService.js';
 
 export async function getPostLikes(req, res, next) {
     const postId = Number(req.params.postId);
@@ -49,6 +51,20 @@ export async function postPostLike(req, res, next) {
         if (!postPostLikeResult.success)
             throw new CustomError(postPostLikeResult.message, postPostLikeResult.status);
 
+        const getPostTagsResult = await postTagsService.getPostTags(postId);
+
+        if (!getPostTagsResult.success)
+            throw new CustomError(getPostTagsResult.message, getPostTagsResult.status);
+
+        const { tags: tagsRows } = getPostTagsResult;
+
+        const tagsIds = tagsRows.map(tagRow => tagRow.tag_id);
+
+        const putUserTagsResult = await userTagsService.putUserTags(tagsIds, req.userId);
+
+        if (!putUserTagsResult.success)
+            throw new CustomError(putUserTagsResult.message, putUserTagsResult.status);
+
         res.status(201).json({
             success: true,
             message: 'Successfully liked post',
@@ -76,6 +92,20 @@ export async function deletePostLike(req, res, next) {
                 deletePostLikeResult.message,
                 deletePostLikeResult.status
             );
+
+        const getPostTagsResult = await postTagsService.getPostTags(postId);
+
+        if (!getPostTagsResult.success)
+            throw new CustomError(getPostTagsResult.message, getPostTagsResult.status);
+
+        const { tags: tagsRows } = getPostTagsResult;
+
+        const tagsIds = tagsRows.map(tagRow => tagRow.tag_id);
+
+        const deleteUserTagsResult = await userTagsService.deleteUserTags(tagsIds, req.userId);
+
+        if (!deleteUserTagsResult.success)
+            throw new CustomError(deleteUserTagsResult.message, deleteUserTagsResult.status);
 
         res.status(200).json({
             success: true,
