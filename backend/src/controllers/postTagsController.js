@@ -1,7 +1,7 @@
 import validator from 'validator';
 
-import CustomError from '../utils/errorHandling.js';
 import * as postTagsService from '../services/postTagsService.js';
+import CustomError from '../utils/errorHandling.js';
 
 export async function getPostTags(req, res, next) {
     const postId = Number(req.params.postId);
