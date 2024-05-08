@@ -1,6 +1,27 @@
-import { body, param } from 'express-validator';
+import { body, param, query } from 'express-validator';
 
+import UserModel from '../models/userModel.js';
 import PostModel from '../models/postModel.js';
+
+export const getUserPostsValidation = [
+    query('userId', 'No valid user id is provided')
+        .if(query('userId').exists())
+        .custom(async (value) => {
+            const userId = Number(value);
+
+            if (!Number.isNaN(userId) && userId > 0) {
+                const userModel = new UserModel();
+                const [userRow] = await userModel.find({ id: userId });
+
+                if (!userRow.length)
+                    throw new Error('user is not found');
+
+                return true;
+            }
+
+            throw new Error();
+        }),
+];
 
 export const createPostValidation = [
     body('title')
