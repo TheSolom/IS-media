@@ -2,6 +2,33 @@ import PostCommentsModel from '../models/postCommentsModel.js';
 import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
 
+export const getPostComment = async (commentId) => {
+    const postCommentsModel = new PostCommentsModel();
+
+    try {
+        const [commentRow] = await postCommentsModel.find({ id: commentId });
+
+        if (!commentRow.length)
+            return {
+                success: false,
+                message: `No comment found with id '${commentId}' `,
+                status: 404
+            };
+
+        return {
+            success: true,
+            comment: commentRow[0]
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while fetching the comment',
+            status: 500,
+        };
+    }
+};
+
 export const getPostComments = async (postId, lastId, limit) => {
     const postCommentsModel = new PostCommentsModel();
 
@@ -25,8 +52,9 @@ export const getPostComments = async (postId, lastId, limit) => {
     }
 };
 
-export const postPostComment = async (title, content, authorId, postId) => {
+export const postPostComment = async (title, content, postId, authorId) => {
     const postCommentsModel = new PostCommentsModel();
+
     try {
         const createResult = await postCommentsModel.create({ title, content, author_id: authorId, post_id: postId });
 

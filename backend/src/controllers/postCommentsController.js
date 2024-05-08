@@ -1,5 +1,32 @@
-import CustomError from '../utils/errorHandling.js';
 import * as postCommentsService from '../services/postCommentsService.js';
+import * as tagService from '../services/tagService.js';
+import * as commentTagsService from '../services/commentTagsService.js';
+import * as userTagsService from '../services/userTagsService.js';
+import CustomError from '../utils/errorHandling.js';
+import requestValidation from '../utils/requestValidation.js';
+import isValidUrl from '../utils/isValidUrl.js';
+import deleteMedia from '../utils/deleteMedia.js';
+
+export async function getPostComment(req, res, next) {
+    const commentId = Number(req.params.commentId);
+
+    try {
+        if (!commentId || commentId < 1)
+            throw new CustomError('No valid comment id is provided', 400);
+
+        const getPostCommentResult = await postCommentsService.getPostComment(commentId);
+
+        if (!getPostCommentResult.success)
+            throw new CustomError(getPostCommentResult.message, getPostCommentResult.status);
+
+        res.status(200).json({
+            success: true,
+            comment: getPostCommentResult.comment
+        });
+    } catch (error) {
+        next(error);
+    }
+}
 
 export async function getPostComments(req, res, next) {
     const postId = Number(req.params.postId);
@@ -38,74 +65,101 @@ export async function postPostComment(req, res, next) {
     const { title, content, postId } = req.body;
 
     try {
-        let titleTrimmed = "";
-
-        if (title !== undefined) {
-            titleTrimmed = title.trim();
-
-            if (titleTrimmed.length > 100)
-                throw new CustomError('Title must be at most 100 characters', 400);
-        }
-
-        if (!content)
-            throw new CustomError('No valid content is provided', 400);
-
-        const contentTrimmed = content.trim();
-
-        if (contentTrimmed.length > 100)
-            throw new CustomError('Content must be at most 100 characters', 400);
-
-        if (!postId)
-            throw new CustomError('No post id is provided', 400);
+        requestValidation(req);
 
         const postPostCommentResult = await postCommentsService.postPostComment(
-            titleTrimmed,
-            contentTrimmed,
+            title,
+            content,
+            postId,
             req.userId,
-            postId
         );
 
         if (!postPostCommentResult.success)
             throw new CustomError(postPostCommentResult.message, postPostCommentResult.status);
 
+        const { insertId: commentId } = postPostCommentResult.createResult;
+
+        const tags = await tagService.exportTags(
+            title,
+            content
+        );
+
+        if (tags) {
+            const createTagsResult = await commentTagsService.postCommentTags(tags, commentId);
+
+            if (!createTagsResult.success) {
+                await postCommentsService.deletePostComment(commentId, req.userId);
+
+                throw new CustomError('An error occurred while creating the comment', 500);
+            }
+
+            const { tagsIds } = createTagsResult;
+
+            const putUsedTagsResult = await userTagsService.putUserTags(tagsIds, req.userId);
+
+            if (!putUsedTagsResult.success) {
+                await postCommentsService.deletePostComment(commentId, req.userId);
+
+                throw new CustomError('An error occurred while creating the comment', 500);
+            }
+        }
+
         res.status(201).json({
             success: true,
             message: 'Successfully created comment',
-            commentId: postPostCommentResult.createResult.insertId,
+            commentId,
         });
     } catch (error) {
         next(error);
     }
 }
 
+// eslint-disable-next-line consistent-return
 export async function updatePostComment(req, res, next) {
-    const commentId = Number(req.params.commentId);
     const { title, content } = req.body;
+    const commentId = Number(req.params.commentId);
 
     try {
-        let titleTrimmed = "";
+        requestValidation(req);
 
-        if (title !== undefined) {
-            titleTrimmed = title.trim();
+        const getPostCommentResult = await postCommentsService.getPostComment(commentId);
 
-            if (titleTrimmed.length > 100)
-                throw new CustomError('Title must be at most 100 characters', 400);
+        if (!getPostCommentResult.success)
+            throw new CustomError(getPostCommentResult.message, getPostCommentResult.status);
+
+        const { comment: currentComment } = getPostCommentResult;
+
+        if (currentComment.author_id !== req.userId)
+            throw new CustomError('You are not allowed to update this comment', 401);
+
+        if (currentComment.title === title && currentComment.content === content)
+            return res.status(200).json({
+                success: true,
+                message: 'No changes detected',
+            });
+
+        const getCommentTagsResult = await commentTagsService.getCommentTags(commentId);
+
+        if (!getCommentTagsResult.success)
+            throw new CustomError(getCommentTagsResult.message, getCommentTagsResult.status);
+
+        const commentTagsIds = getCommentTagsResult.tags.map(tag => tag.tag_id);
+
+        if (commentTagsIds.length) {
+            const deleteCommentTagsResult = await commentTagsService.deleteCommentTags(commentId, commentTagsIds);
+
+            if (!deleteCommentTagsResult.success)
+                throw new CustomError('An error occurred while updating the comment', 500);
+
+            const deleteUserTagsResult = await userTagsService.deleteUserTags(commentTagsIds, req.userId);
+
+            if (!deleteUserTagsResult.success)
+                throw new CustomError('An error occurred while updating the comment', 500);
         }
 
-        if (!content)
-            throw new CustomError('No valid content is provided', 400);
-
-        const contentTrimmed = content.trim();
-
-        if (contentTrimmed.length > 100)
-            throw new CustomError('Content must be at most 100 characters', 400);
-
-        if (!commentId || commentId < 1)
-            throw new CustomError('No valid comment id is provided', 400);
-
         const updatePostCommentResult = await postCommentsService.updatePostComment(
-            titleTrimmed,
-            contentTrimmed,
+            title,
+            content,
             commentId,
             req.userId
         );
@@ -116,7 +170,47 @@ export async function updatePostComment(req, res, next) {
                 updatePostCommentResult.status
             );
 
-        res.status(updatePostCommentResult.updateResult.affectedRows ? 200 : 204).json({
+        if (isValidUrl(currentComment.content) && currentComment.content !== content)
+            await deleteMedia(currentComment, 'content');
+
+        const newTags = await tagService.exportTags(
+            title,
+            content
+        );
+
+        if (newTags) {
+            const commentTagsResult = await commentTagsService.postCommentTags(newTags, commentId);
+
+            if (!commentTagsResult.success) {
+                await postCommentsService.updatePostComment(
+                    currentComment.title,
+                    currentComment.content,
+                    commentId,
+                );
+
+                throw new CustomError('An error occurred while updating the comment', 500);
+            }
+
+            const { tagsIds: newTagsIds } = commentTagsResult;
+
+            if (newTagsIds) {
+                const putUsedTagsResult = await userTagsService.putUserTags(newTagsIds, req.userId);
+
+                if (!putUsedTagsResult.success) {
+                    await commentTagsService.deleteCommentTags(commentId, newTagsIds);
+
+                    await postCommentsService.updatePost(
+                        currentComment.title,
+                        currentComment.content,
+                        commentId,
+                    );
+
+                    throw new CustomError('An error occurred while updating the comment', 500);
+                }
+            }
+        }
+
+        res.status(200).json({
             success: true,
             message: 'Successfully updated comment',
         });
@@ -131,6 +225,35 @@ export async function deletePostComment(req, res, next) {
     try {
         if (!commentId || commentId < 1)
             throw new CustomError('No valid comment id is provided', 400);
+
+        const getPostCommentResult = await postCommentsService.getPostComment(commentId);
+
+        if (!getPostCommentResult.success)
+            throw new CustomError(getPostCommentResult.message, getPostCommentResult.status);
+
+        const { comment: currentComment } = getPostCommentResult;
+
+        if (currentComment.author_id !== req.userId)
+            throw new CustomError('You are not allowed to delete this comment', 401);
+
+        const getCommentTagsResult = await commentTagsService.getCommentTags(commentId);
+
+        if (!getCommentTagsResult.success)
+            throw new CustomError(getCommentTagsResult.message, getCommentTagsResult.status);
+
+        const commentTagsIds = getCommentTagsResult.tags.map(tag => tag.tag_id);
+
+        if (commentTagsIds.length) {
+            const deletePostTagsResult = await commentTagsService.deleteCommentTags(commentId, commentTagsIds);
+
+            if (!deletePostTagsResult.success)
+                throw new CustomError('An error occurred while deleting the comment', 500);
+
+            const deleteUserTagsResult = await userTagsService.deleteUserTags(commentTagsIds, req.userId);
+
+            if (!deleteUserTagsResult.success)
+                throw new CustomError('An error occurred while deleting the comment', 500);
+        }
 
         const deletePostCommentResult = await postCommentsService.deletePostComment(
             commentId,
