@@ -16,6 +16,7 @@ export const createPostValidation = [
         .isLength({ max: 500 })
         .withMessage('Content must be at most 500 characters'),
     body('parentId', 'No valid parent post id is provided')
+        .default(null)
         .if(body('parentId').exists())
         .custom(async (value) => {
             if (value === null)
