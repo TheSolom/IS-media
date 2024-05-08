@@ -11,14 +11,7 @@ export async function getUserPosts(req, res, next) {
     const { userId, lastId, limit } = req.query;
 
     try {
-        if (userId !== undefined && (userId === null || Number.isNaN(Number(userId)) || Number(userId) < 1))
-            throw new CustomError('No valid user id is provided', 400);
-
-        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
-            throw new CustomError('No valid last id is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const getUserPostsResult = await postService.getUserPosts(
             userId ?? req.userId,
@@ -46,11 +39,7 @@ export async function getFeedPosts(req, res, next) {
     const { lastId, limit } = req.query;
 
     try {
-        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
-            throw new CustomError('No valid last id is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const getFeedPostsResult = await postService.getFeedPosts(
             req.userId,
@@ -78,8 +67,7 @@ export async function getSuggestedPosts(req, res, next) {
     const { limit } = req.query;
 
     try {
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const getMostUsedTagsResult = await userTagsService.getMostUsedTags(
             req.userId,
@@ -192,7 +180,7 @@ export async function postPost(req, res, next) {
 // eslint-disable-next-line consistent-return
 export async function updatePost(req, res, next) {
     const { title, content } = req.body;
-    const postId = Number(req.params.postId);
+    const { postId } = req.params;
 
     try {
         requestValidation(req);

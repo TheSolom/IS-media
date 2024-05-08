@@ -10,20 +10,22 @@ import {
     deletePost,
 } from '../controllers/postController.js';
 import {
+    getUserPostsValidation,
     createPostValidation,
     updatePostValidation
 } from '../validations/postValidation.js';
+import cursorPaginationValidation from '../validations/cursorPaginationValidation.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/user', getUserPosts);
+router.get('/user', cursorPaginationValidation, getUserPostsValidation, getUserPosts);
 
-router.get('/feed', getFeedPosts);
+router.get('/feed', cursorPaginationValidation, getFeedPosts);
 
-router.get('/suggestions', getSuggestedPosts);
+router.get('/suggestions', cursorPaginationValidation, getSuggestedPosts);
 
 router.get('/:postId', getPost);
 

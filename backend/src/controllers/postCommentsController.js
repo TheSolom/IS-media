@@ -29,18 +29,11 @@ export async function getPostComment(req, res, next) {
 }
 
 export async function getPostComments(req, res, next) {
-    const postId = Number(req.params.postId);
+    const { postId } = req.params;
     const { lastId, limit } = req.query;
 
     try {
-        if (!postId || postId < 1)
-            throw new CustomError('No valid post id is provided', 400);
-
-        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
-            throw new CustomError('No valid last id is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const getPostCommentsResult = await postCommentsService.getPostComments(
             postId,
@@ -117,7 +110,7 @@ export async function postPostComment(req, res, next) {
 // eslint-disable-next-line consistent-return
 export async function updatePostComment(req, res, next) {
     const { title, content } = req.body;
-    const commentId = Number(req.params.commentId);
+    const { commentId } = req.params;
 
     try {
         requestValidation(req);
