@@ -41,7 +41,7 @@ export const getFeedPosts = async (userId, lastId, limit) => {
         console.error(error);
         return {
             success: false,
-            message: 'An error occurred while fetching the stories',
+            message: 'An error occurred while fetching the posts',
             status: 500,
         };
     }
