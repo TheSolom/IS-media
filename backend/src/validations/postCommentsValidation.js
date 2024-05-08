@@ -2,6 +2,22 @@ import { body, param } from 'express-validator';
 
 import PostModel from '../models/postModel.js';
 
+export const getPostCommentsValidation = [
+    param('postId', 'No valid post id is provided')
+        .isInt({ min: 1 })
+        .custom(async (value) => {
+            if (Number.isInteger(value) && value > 0) {
+                const postModel = new PostModel();
+                const [postRow] = await postModel.find({ id: value });
+
+                if (!postRow.length)
+                    throw new Error('post is not found');
+            }
+
+            return true;
+        }),
+];
+
 export const createPostCommentValidation = [
     body('title')
         .trim()
