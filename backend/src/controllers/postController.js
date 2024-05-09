@@ -4,6 +4,8 @@ import * as postTagsService from '../services/postTagsService.js';
 import * as userTagsService from '../services/userTagsService.js';
 import CustomError from '../utils/errorHandling.js';
 import requestValidation from '../utils/requestValidation.js';
+import isSameAuthor from '../utils/isSameAuthor.js';
+import isContentUnchanged from '../utils/isContentUnchanged.js';
 import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
 
@@ -174,10 +176,10 @@ export async function updatePost(req, res, next) {
 
         const { post: currentPost } = getPostResult;
 
-        if (currentPost.author_id !== req.userId)
+        if (isSameAuthor(currentPost, req.userId))
             throw new CustomError('You are not allowed to update this post', 401);
 
-        if (currentPost.title === title && currentPost.content === content)
+        if (isContentUnchanged(currentPost, title, content))
             return res.status(200).json({
                 success: true,
                 message: 'No changes detected',
@@ -186,7 +188,7 @@ export async function updatePost(req, res, next) {
         const getPostTagsResult = await postTagsService.getPostTags(postId);
 
         if (!getPostTagsResult.success)
-            throw new CustomError(getPostTagsResult.message, getPostTagsResult.status);
+            throw new CustomError('An error occurred while updating the post', 500);
 
         const postTagsIds = getPostTagsResult.tags.map(tag => tag.tag_id);
 
@@ -209,10 +211,7 @@ export async function updatePost(req, res, next) {
         );
 
         if (!updatePostResult.success)
-            throw new CustomError(
-                updatePostResult.message,
-                updatePostResult.status
-            );
+            throw new CustomError(updatePostResult.message, updatePostResult.status);
 
         if (isValidUrl(currentPost.content) && currentPost.content !== content)
             await deleteMedia(currentPost, 'content');
@@ -277,13 +276,13 @@ export async function deletePost(req, res, next) {
 
         const { post: currentPost } = getPostResult;
 
-        if (currentPost.author_id !== req.userId)
+        if (isSameAuthor(currentPost, req.userId))
             throw new CustomError('You are not allowed to delete this post', 401);
 
         const getPostTagsResult = await postTagsService.getPostTags(postId);
 
         if (!getPostTagsResult.success)
-            throw new CustomError(getPostTagsResult.message, getPostTagsResult.status);
+            throw new CustomError('An error occurred while deleting the post', 500);
 
         const postTagsIds = getPostTagsResult.tags.map(tag => tag.tag_id);
 
