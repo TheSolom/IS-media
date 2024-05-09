@@ -2,6 +2,7 @@ import CustomError from '../utils/errorHandling.js';
 import * as postLikesService from '../services/postLikesService.js';
 import * as postTagsService from '../services/postTagsService.js';
 import * as userTagsService from '../services/userTagsService.js';
+import requestValidation from '../utils/requestValidation.js';
 
 export async function getPostLikes(req, res, next) {
     const postId = Number(req.params.postId);
@@ -11,11 +12,7 @@ export async function getPostLikes(req, res, next) {
         if (!postId || postId < 1)
             throw new CustomError('No valid post id is provided', 400);
 
-        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
-            throw new CustomError('No valid last id is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const getPostLikesResult = await postLikesService.getPostLikes(
             postId,
@@ -88,10 +85,7 @@ export async function deletePostLike(req, res, next) {
         );
 
         if (!deletePostLikeResult.success)
-            throw new CustomError(
-                deletePostLikeResult.message,
-                deletePostLikeResult.status
-            );
+            throw new CustomError(deletePostLikeResult.message, deletePostLikeResult.status);
 
         const getPostTagsResult = await postTagsService.getPostTags(postId);
 
