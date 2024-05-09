@@ -216,20 +216,13 @@ export async function updatePost(req, res, next) {
         if (isValidUrl(currentPost.content) && currentPost.content !== content)
             await deleteMedia(currentPost, 'content');
 
-        const newTags = await tagService.exportTags(
-            title,
-            content
-        );
+        const newTags = await tagService.exportTags(title, content);
 
-        if (newTags) {
+        if (newTags.length) {
             const postPostTagsResult = await postTagsService.postPostTags(newTags, postId);
 
             if (!postPostTagsResult.success) {
-                await postService.updatePost(
-                    currentPost.title,
-                    currentPost.content,
-                    postId,
-                );
+                await postService.updatePost(currentPost.title, currentPost.content, postId);
 
                 throw new CustomError('An error occurred while updating the post', 500);
             }
@@ -242,11 +235,7 @@ export async function updatePost(req, res, next) {
                 if (!putUsedTagsResult.success) {
                     await postTagsService.deletePostTags(postId, newTagsIds);
 
-                    await postService.updatePost(
-                        currentPost.title,
-                        currentPost.content,
-                        postId,
-                    );
+                    await postService.updatePost(currentPost.title, currentPost.content, postId);
 
                     throw new CustomError('An error occurred while updating the post', 500);
                 }
@@ -304,10 +293,7 @@ export async function deletePost(req, res, next) {
         );
 
         if (!deletePostResult.success)
-            throw new CustomError(
-                deletePostResult.message,
-                deletePostResult.status
-            );
+            throw new CustomError(deletePostResult.message, deletePostResult.status);
 
         res.status(200).json({
             success: true,

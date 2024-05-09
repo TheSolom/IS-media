@@ -4,6 +4,8 @@ import * as commentTagsService from '../services/commentTagsService.js';
 import * as userTagsService from '../services/userTagsService.js';
 import CustomError from '../utils/errorHandling.js';
 import requestValidation from '../utils/requestValidation.js';
+import isSameAuthor from '../utils/isSameAuthor.js';
+import isContentUnchanged from '../utils/isContentUnchanged.js';
 import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
 
@@ -72,12 +74,9 @@ export async function postPostComment(req, res, next) {
 
         const { insertId: commentId } = postPostCommentResult.createResult;
 
-        const tags = await tagService.exportTags(
-            title,
-            content
-        );
+        const tags = await tagService.exportTags(title, content);
 
-        if (tags) {
+        if (tags.length) {
             const createTagsResult = await commentTagsService.postCommentTags(tags, commentId);
 
             if (!createTagsResult.success) {
@@ -122,10 +121,10 @@ export async function updatePostComment(req, res, next) {
 
         const { comment: currentComment } = getPostCommentResult;
 
-        if (currentComment.author_id !== req.userId)
+        if (!isSameAuthor(currentComment, req.userId))
             throw new CustomError('You are not allowed to update this comment', 401);
 
-        if (currentComment.title === title && currentComment.content === content)
+        if (isContentUnchanged(currentComment, title, content))
             return res.status(200).json({
                 success: true,
                 message: 'No changes detected',
@@ -158,28 +157,18 @@ export async function updatePostComment(req, res, next) {
         );
 
         if (!updatePostCommentResult.success)
-            throw new CustomError(
-                updatePostCommentResult.message,
-                updatePostCommentResult.status
-            );
+            throw new CustomError(updatePostCommentResult.message, updatePostCommentResult.status);
 
         if (isValidUrl(currentComment.content) && currentComment.content !== content)
             await deleteMedia(currentComment, 'content');
 
-        const newTags = await tagService.exportTags(
-            title,
-            content
-        );
+        const newTags = await tagService.exportTags(title, content);
 
-        if (newTags) {
+        if (newTags.length) {
             const commentTagsResult = await commentTagsService.postCommentTags(newTags, commentId);
 
             if (!commentTagsResult.success) {
-                await postCommentsService.updatePostComment(
-                    currentComment.title,
-                    currentComment.content,
-                    commentId,
-                );
+                await postCommentsService.updatePostComment(currentComment.title, currentComment.content, commentId);
 
                 throw new CustomError('An error occurred while updating the comment', 500);
             }
@@ -192,11 +181,7 @@ export async function updatePostComment(req, res, next) {
                 if (!putUsedTagsResult.success) {
                     await commentTagsService.deleteCommentTags(commentId, newTagsIds);
 
-                    await postCommentsService.updatePost(
-                        currentComment.title,
-                        currentComment.content,
-                        commentId,
-                    );
+                    await postCommentsService.updatePost(currentComment.title, currentComment.content, commentId);
 
                     throw new CustomError('An error occurred while updating the comment', 500);
                 }
@@ -226,7 +211,7 @@ export async function deletePostComment(req, res, next) {
 
         const { comment: currentComment } = getPostCommentResult;
 
-        if (currentComment.author_id !== req.userId)
+        if (isSameAuthor(currentComment, req.userId))
             throw new CustomError('You are not allowed to delete this comment', 401);
 
         const getCommentTagsResult = await commentTagsService.getCommentTags(commentId);
@@ -254,10 +239,7 @@ export async function deletePostComment(req, res, next) {
         );
 
         if (!deletePostCommentResult.success)
-            throw new CustomError(
-                deletePostCommentResult.message,
-                deletePostCommentResult.status
-            );
+            throw new CustomError(deletePostCommentResult.message, deletePostCommentResult.status);
 
         res.status(200).json({
             success: true,
