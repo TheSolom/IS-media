@@ -74,12 +74,6 @@ export async function getSuggestedPosts(req, res, next) {
             limit ?? 5
         );
 
-        if (!getMostUsedTagsResult.success)
-            throw new CustomError(
-                getMostUsedTagsResult.message,
-                getMostUsedTagsResult.status
-            );
-
         const { tags: tagsRows } = getMostUsedTagsResult;
 
         const getSuggestedPostsResult = await postService.getSuggestedPosts(
