@@ -6,13 +6,6 @@ export const getMostUsedTags = async (userId, limit) => {
     try {
         const [mostUsedTagsRows] = await userTagsModel.findMostUsedTags(userId, limit);
 
-        if (!mostUsedTagsRows.length)
-            return {
-                success: false,
-                message: 'No used tags found',
-                status: 404,
-            };
-
         return {
             success: true,
             tags: mostUsedTagsRows
