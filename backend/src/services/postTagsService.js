@@ -29,7 +29,7 @@ export const getTagPosts = async (tag, lastId, limit) => {
     try {
         const [postsRows] = await postTagsModel.findTagPosts(tag, lastId, limit);
 
-        const id = postsRows[0] ? postsRows[0].post_tag_id : 0;
+        const id = postsRows.length ? postsRows[0].post_tag_id : 0;
 
         return {
             success: true,
