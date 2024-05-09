@@ -20,10 +20,7 @@ export async function getUserPosts(req, res, next) {
         );
 
         if (!getUserPostsResult.success)
-            throw new CustomError(
-                getUserPostsResult.message,
-                getUserPostsResult.status
-            );
+            throw new CustomError(getUserPostsResult.message, getUserPostsResult.status);
 
         res.status(getUserPostsResult.posts.length ? 200 : 204).json({
             success: true,
@@ -48,10 +45,7 @@ export async function getFeedPosts(req, res, next) {
         );
 
         if (!getFeedPostsResult.success)
-            throw new CustomError(
-                getFeedPostsResult.message,
-                getFeedPostsResult.status
-            );
+            throw new CustomError(getFeedPostsResult.message, getFeedPostsResult.status);
 
         res.status(getFeedPostsResult.posts.length ? 200 : 204).json({
             success: true,
@@ -83,10 +77,7 @@ export async function getSuggestedPosts(req, res, next) {
         );
 
         if (!getSuggestedPostsResult.success)
-            throw new CustomError(
-                getSuggestedPostsResult.message,
-                getSuggestedPostsResult.status
-            );
+            throw new CustomError(getSuggestedPostsResult.message, getSuggestedPostsResult.status);
 
         res.status(getSuggestedPostsResult.posts.length ? 200 : 204).json({
             success: true,
@@ -136,12 +127,9 @@ export async function postPost(req, res, next) {
 
         const { insertId: postId } = postPostResult.createResult;
 
-        const tags = await tagService.exportTags(
-            title,
-            content
-        );
+        const tags = await tagService.exportTags(title, content);
 
-        if (tags) {
+        if (tags.length) {
             const createTagsResult = await postTagsService.postPostTags(tags, postId);
 
             if (!createTagsResult.success) {
