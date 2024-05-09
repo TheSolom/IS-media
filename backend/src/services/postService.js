@@ -1,18 +1,46 @@
 import PostModel from '../models/postModel.js';
 import shuffleArray from '../utils/shuffleArray.js';
 
+const postMapper = (postRow) =>
+    postRow.map((post) => (
+        {
+            postId: post.id,
+            title: post.title,
+            content: post.content,
+            createdAt: post.created_at,
+            updatedAt: post.updated_at,
+            author: {
+                id: post.author_id,
+                username: post.username,
+                profilePicture: post.profile_picture
+            },
+            parentPost: post.parent_id ? {
+                title: post.parent_title,
+                content: post.parent_content,
+                createdAt: post.parent_created_at,
+                author: {
+                    id: post.parent_author_id,
+                    username: post.parent_username,
+                    profilePicture: post.parent_profile_picture
+                }
+            } : null
+        }
+    ));
+
 export const getUserPosts = async (userId, lastId, limit) => {
     const postModel = new PostModel();
 
     try {
-        const [postRows] = await postModel.findUserPosts(userId, lastId, limit);
+        const [postsRows] = await postModel.findUserPosts(userId, lastId, limit);
 
-        const id = postRows[0] ? postRows[0].id : 0;
+        const posts = postsRows.forEach((postRow) => postMapper(postRow));
+
+        const id = postsRows.length ? postsRows[0].id : 0;
 
         return {
             success: true,
             lastId: id,
-            posts: postRows
+            posts
         };
     } catch (error) {
         console.error(error);
@@ -28,14 +56,16 @@ export const getFeedPosts = async (userId, lastId, limit) => {
     const postModel = new PostModel();
 
     try {
-        const [postRows] = await postModel.findFeedPosts(userId, lastId, limit);
+        const [postsRows] = await postModel.findFeedPosts(userId, lastId, limit);
 
-        const id = postRows[0] ? postRows[0].id : 0;
+        const posts = postsRows.forEach((postRow) => postMapper(postRow));
+
+        const id = postsRows.length ? postsRows[0].id : 0;
 
         return {
             success: true,
             lastId: id,
-            posts: postRows
+            posts
         };
     } catch (error) {
         console.error(error);
@@ -108,18 +138,13 @@ export const getSuggestedPosts = async (tagsRows, userId, limit) => {
 
         const tagIds = shuffleArray(selectedTags);
 
-        const [postRows] = await postModel.findSuggestedPosts(tagIds, userId, limit);
+        const [postsRows] = await postModel.findSuggestedPosts(tagIds, userId, limit);
 
-        if (!postRows.length)
-            return {
-                success: false,
-                message: 'No suggested posts found',
-                status: 404,
-            };
+        const posts = postsRows.forEach((postRow) => postMapper(postRow));
 
         return {
             success: true,
-            posts: postRows
+            posts
         };
     } catch (error) {
         console.error(error);
@@ -144,9 +169,11 @@ export const getPost = async (postId) => {
                 status: 404,
             };
 
+        const post = postMapper(postRow[0]);
+
         return {
             success: true,
-            post: postRow[0]
+            post
         };
     } catch (error) {
         console.error(error);
