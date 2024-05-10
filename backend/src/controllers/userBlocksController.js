@@ -1,15 +1,12 @@
-import CustomError from '../utils/errorHandling.js';
 import * as userBlocksService from '../services/userBlocksService.js';
+import CustomError from '../utils/errorHandling.js';
+import requestValidation from '../utils/requestValidation.js';
 
 export async function getUserBlockStatus(req, res, next) {
-    const userId = Number(req.params.userId);
+    const { userId } = req.params;
 
     try {
-        if (!userId || userId < 1)
-            throw new CustomError('No valid blocked id is provided', 400);
-
-        if (userId === req.userId)
-            throw new CustomError('User cannot block himself', 400);
+        requestValidation(req);
 
         const getUserBlocksResult = await userBlocksService.getUserBlockStatus(
             userId,
@@ -32,11 +29,7 @@ export async function getUserBlocks(req, res, next) {
     const { lastId, limit } = req.query;
 
     try {
-        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
-            throw new CustomError('No valid last id is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const getUserBlocksResult = await userBlocksService.getUserBlocks(
             req.userId,
@@ -45,10 +38,7 @@ export async function getUserBlocks(req, res, next) {
         );
 
         if (!getUserBlocksResult.success)
-            throw new CustomError(
-                getUserBlocksResult.message,
-                getUserBlocksResult.status
-            );
+            throw new CustomError(getUserBlocksResult.message, getUserBlocksResult.status);
 
         res.status(getUserBlocksResult.blocks.length ? 200 : 204).json({
             success: true,
@@ -61,14 +51,10 @@ export async function getUserBlocks(req, res, next) {
 }
 
 export async function postUserBlock(req, res, next) {
-    const blockedId = Number(req.body.blockedId);
+    const { blockedId } = req.body;
 
     try {
-        if (!blockedId || blockedId < 1)
-            throw new CustomError('No valid user id is provided', 400);
-
-        if (req.userId === blockedId)
-            throw new CustomError('You can not block yourself', 400);
+        requestValidation(req);
 
         const postUserBlockResult = await userBlocksService.postUserBlock(
             blockedId,
@@ -76,10 +62,7 @@ export async function postUserBlock(req, res, next) {
         );
 
         if (!postUserBlockResult.success)
-            throw new CustomError(
-                postUserBlockResult.message,
-                postUserBlockResult.status
-            );
+            throw new CustomError(postUserBlockResult.message, postUserBlockResult.status);
 
         res.status(201).json({
             success: true,
@@ -91,14 +74,10 @@ export async function postUserBlock(req, res, next) {
 }
 
 export async function deleteUserBlock(req, res, next) {
-    const blockedId = Number(req.params.blockedId);
+    const { blockedId } = req.params;
 
     try {
-        if (!blockedId || blockedId < 1)
-            throw new CustomError('No valid user id is provided', 400);
-
-        if (req.userId === blockedId)
-            throw new CustomError('You can not unblock yourself', 400);
+        requestValidation(req);
 
         const deleteUserBlockResult = await userBlocksService.deleteUserBlock(
             blockedId,

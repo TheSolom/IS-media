@@ -1,12 +1,12 @@
-import CustomError from '../utils/errorHandling.js';
 import * as userTagsService from '../services/userTagsService.js';
+import CustomError from '../utils/errorHandling.js';
+import requestValidation from '../utils/requestValidation.js';
 
-export async function getMostUsedTags(req, res, next) {
+export default async function getMostUsedTags(req, res, next) {
     const { limit } = req.query;
 
     try {
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const getMostUsedTagsResult = await userTagsService.getMostUsedTags(
             req.userId,

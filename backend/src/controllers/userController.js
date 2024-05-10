@@ -1,7 +1,6 @@
-import { validationResult } from 'express-validator';
-
-import CustomError from '../utils/errorHandling.js';
 import * as userService from '../services/userService.js';
+import CustomError from '../utils/errorHandling.js';
+import requestValidation from '../utils/requestValidation.js';
 
 export async function getUser(req, res, next) {
     const userId = Number(req.params.userId);
@@ -25,16 +24,8 @@ export async function getUser(req, res, next) {
 }
 
 export async function updateUser(req, res, next) {
-    const errors = validationResult(req);
-
     try {
-        if (!errors.isEmpty()) {
-            throw new CustomError(
-                'Validation failed, updating data is incorrect',
-                422,
-                errors.array()[0].msg
-            );
-        }
+        requestValidation(req);
 
         const getUpdateUserResult = await userService.updateUser(
             req.userId,
@@ -42,10 +33,7 @@ export async function updateUser(req, res, next) {
         );
 
         if (!getUpdateUserResult.success)
-            throw new CustomError(
-                getUpdateUserResult.message,
-                getUpdateUserResult.status
-            );
+            throw new CustomError(getUpdateUserResult.message, getUpdateUserResult.status);
 
         res.status(200).json({
             success: true,
@@ -61,11 +49,7 @@ export async function searchUser(req, res, next) {
     const { limit } = req.query;
 
     try {
-        if (!username)
-            throw new CustomError('No valid username is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const searchUserResult = await userService.searchUser(
             username,

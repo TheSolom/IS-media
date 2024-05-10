@@ -9,7 +9,7 @@ export const getUserPostsValidation = [
         .custom(async (value) => {
             const userId = Number(value);
 
-            if (!Number.isNaN(userId) && userId > 0) {
+            if (Number.isInteger(userId) && userId > 0) {
                 const userModel = new UserModel();
                 const [userRow] = await userModel.find({ id: userId });
 
@@ -45,7 +45,7 @@ export const createPostValidation = [
 
             const parentId = Number(value);
 
-            if (!Number.isNaN(parentId) && parentId > 0) {
+            if (Number.isInteger(parentId) && parentId > 0) {
                 const postModel = new PostModel();
                 const [postRow] = await postModel.find({ id: parentId });
 

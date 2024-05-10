@@ -5,8 +5,12 @@ import {
     updateUser,
     searchUser,
 } from '../controllers/userController.js';
+import {
+    updateUserValidation,
+    searchUserValidation
+} from '../validations/userValidation.js';
+import cursorPaginationValidation from '../validations/cursorPaginationValidation.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
-import updateUserValidation from '../validations/userValidation.js';
 
 const router = express.Router();
 
@@ -16,6 +20,6 @@ router.get('/:userId/profile', getUser);
 
 router.put('/profile', updateUserValidation, updateUser);
 
-router.get('/search/:username', searchUser);
+router.get('/search/:username', cursorPaginationValidation, searchUserValidation, searchUser);
 
 export default router;

@@ -1,22 +1,14 @@
-import { validationResult } from 'express-validator';
-
-import CustomError from '../utils/errorHandling.js';
 import * as authService from '../services/authService.js';
+import CustomError from '../utils/errorHandling.js';
+import requestValidation from '../utils/requestValidation.js';
 import signUploadForm from '../utils/cloudinary/cloudinarySignature.js';
 
 export async function postLogin(req, res, next) {
     const MAX_AGE = 3 * 24 * 60 * 60; // 3 days in seconds
     const { emailOrUsername, password } = req.body;
 
-    const errors = validationResult(req);
     try {
-        if (!errors.isEmpty()) {
-            throw new CustomError(
-                'Validation failed, Signing in data is incorrect',
-                422,
-                errors.array()[0].msg
-            );
-        }
+        requestValidation(req);
 
         const loginResult = await authService.loginUser(
             emailOrUsername,
@@ -38,7 +30,6 @@ export async function postLogin(req, res, next) {
             userId: loginResult.userId,
         });
     } catch (error) {
-        error.cause = errors.array()[0]?.msg;
         next(error);
     }
 }
@@ -47,15 +38,8 @@ export async function postSignup(req, res, next) {
     const { firstname, lastname, username, email, password, birthDate, gender } =
         req.body;
 
-    const errors = validationResult(req);
     try {
-        if (!errors.isEmpty()) {
-            throw new CustomError(
-                'Validation failed, Signing up data is incorrect',
-                422,
-                errors.array()[0].msg
-            );
-        }
+        requestValidation(req);
 
         const signupResult = await authService.signupUser(
             firstname,
@@ -76,7 +60,6 @@ export async function postSignup(req, res, next) {
             userId: signupResult.createResult.insertId,
         });
     } catch (error) {
-        error.cause = errors.array()[0]?.msg;
         next(error);
     }
 }
@@ -91,15 +74,12 @@ export async function postLogout(req, res, next) {
         if (!logoutResult.success)
             throw new CustomError(logoutResult.message, logoutResult.status);
 
-        res
-            .clearCookie('jwt', {
-                httpOnly: true,
-                sameSite: 'none',
-                secure: true,
-                path: '/',
-            })
-            .status(200)
-            .json({ success: true, message: 'Successfully logged out' });
+        res.clearCookie('jwt', {
+            httpOnly: true,
+            sameSite: 'none',
+            secure: true,
+            path: '/',
+        }).status(200).json({ success: true, message: 'Successfully logged out' });
     } catch (error) {
         next(error);
     }
@@ -109,15 +89,8 @@ export async function postForgotPassword(req, res, next) {
     const MAX_AGE = 60 * 60 * 1000; // 60 minutes in milliseconds
     const { emailOrUsername } = req.body;
 
-    const errors = validationResult(req);
     try {
-        if (!errors.isEmpty()) {
-            throw new CustomError(
-                'Validation failed, form data is incorrect',
-                422,
-                errors.array()[0].msg
-            );
-        }
+        requestValidation(req);
 
         const forgotPasswordResult = await authService.forgotPassword(
             emailOrUsername,
@@ -125,10 +98,7 @@ export async function postForgotPassword(req, res, next) {
         );
 
         if (!forgotPasswordResult.success)
-            throw new CustomError(
-                forgotPasswordResult.message,
-                forgotPasswordResult.status
-            );
+            throw new CustomError(forgotPasswordResult.message, forgotPasswordResult.status);
 
         res.status(201).json({
             success: true,
@@ -144,15 +114,8 @@ export async function patchResetPassword(req, res, next) {
     const { token } = req.params;
     const { password } = req.body;
 
-    const errors = validationResult(req);
     try {
-        if (!errors.isEmpty()) {
-            throw new CustomError(
-                'Validation failed, form data is incorrect',
-                422,
-                errors.array()[0].msg
-            );
-        }
+        requestValidation(req);
 
         const resetPasswordResult = await authService.resetPassword(
             token,
@@ -160,10 +123,7 @@ export async function patchResetPassword(req, res, next) {
         );
 
         if (!resetPasswordResult.success)
-            throw new CustomError(
-                resetPasswordResult.message,
-                resetPasswordResult.status
-            );
+            throw new CustomError(resetPasswordResult.message, resetPasswordResult.status);
 
         res.status(200).json({
             success: true,

@@ -7,19 +7,24 @@ import {
     postStory,
     deleteStory,
 } from '../controllers/storyController.js';
+import {
+    getUserStoriesValidation,
+    createStoryValidation,
+} from '../validations/storyValidation.js';
+import cursorPaginationValidation from '../validations/cursorPaginationValidation.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/user', getUserStories);
+router.get('/user', cursorPaginationValidation, getUserStoriesValidation, getUserStories);
 
-router.get('/feed', getFeedStories);
+router.get('/feed', cursorPaginationValidation, getFeedStories);
 
 router.get('/:storyId', getStory);
 
-router.post('/', postStory);
+router.post('/', createStoryValidation, postStory);
 
 router.delete('/:storyId', deleteStory);
 

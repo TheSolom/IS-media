@@ -1,7 +1,6 @@
-import validator from 'validator';
-
 import * as commentTagsService from '../services/commentTagsService.js';
 import CustomError from '../utils/errorHandling.js';
+import requestValidation from '../utils/requestValidation.js';
 
 export async function getCommentTags(req, res, next) {
     const commentId = Number(req.params.commentId);
@@ -31,14 +30,7 @@ export async function getTagComments(req, res, next) {
     const { lastId, limit } = req.query;
 
     try {
-        if (!tag || !validator.isAlphanumeric(tag))
-            throw new CustomError('No valid tag is provided', 400);
-
-        if (lastId !== undefined && (lastId === null || Number.isNaN(Number(lastId)) || Number(lastId) < 0))
-            throw new CustomError('No valid last id is provided', 400);
-
-        if (limit !== undefined && (limit === null || Number.isNaN(Number(limit)) || Number(limit) < 1))
-            throw new CustomError('No valid limit is provided', 400);
+        requestValidation(req);
 
         const getTagCommentsResult = await commentTagsService.getTagComments(
             tag,
