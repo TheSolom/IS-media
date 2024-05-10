@@ -25,7 +25,7 @@ export const getUserFollowers = async (userId, lastId, limit) => {
     try {
         const [followersRows] = await userFollowersModel.findFollowers(userId, lastId, limit);
 
-        const id = followersRows[0] ? followersRows[0].id : 0;
+        const id = followersRows.length ? followersRows[0].id : 0;
 
         return {
             success: true,
@@ -65,7 +65,7 @@ export const getUserFollowings = async (userId, lastId, limit) => {
     try {
         const [followeesRows] = await userFollowersModel.findFollowees(userId, lastId, limit);
 
-        const id = followeesRows[0] ? followeesRows[0].id : 0;
+        const id = followeesRows.length ? followeesRows[0].id : 0;
 
         return {
             success: true,
