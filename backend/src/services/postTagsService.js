@@ -2,6 +2,7 @@ import validator from 'validator';
 
 import PostTagsModel from '../models/postTagsModel.js';
 import TagsModel from '../models/tagsModel.js';
+import postMapper from '../utils/mappers/postMapper.js';
 
 export const getPostTags = async (postId) => {
     const postTagsModel = new PostTagsModel();
@@ -29,12 +30,14 @@ export const getTagPosts = async (tag, lastId, limit) => {
     try {
         const [postsRows] = await postTagsModel.findTagPosts(tag, lastId, limit);
 
+        const posts = postsRows.forEach((postRow) => postMapper(postRow));
+
         const id = postsRows.length ? postsRows[0].post_tag_id : 0;
 
         return {
             success: true,
             lastId: id,
-            posts: postsRows
+            posts
         };
     } catch (error) {
         console.error(error);
