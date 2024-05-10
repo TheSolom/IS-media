@@ -1,4 +1,5 @@
 import StoryModel from '../models/storyModel.js';
+import storyMapper from '../utils/mappers/storyMapper.js';
 
 export const getStory = async (storyId) => {
     const storyModel = new StoryModel();
@@ -25,7 +26,6 @@ export const getStory = async (storyId) => {
         };
     }
 };
-
 
 export const postStory = async (content, authorId) => {
     const storyModel = new StoryModel();
@@ -81,14 +81,16 @@ export const getFeedStories = async (userId, lastId, limit) => {
     const storyModel = new StoryModel();
 
     try {
-        const [storyRows] = await storyModel.findFeedStories(userId, lastId, limit);
+        const [storiesRows] = await storyModel.findFeedStories(userId, lastId, limit);
 
-        const id = storyRows[0] ? storyRows[0].id : 0;
+        const stories = storiesRows.forEach((story) => storyMapper(story));
+
+        const id = storiesRows.length ? storiesRows[0].id : 0;
 
         return {
             success: true,
             lastId: id,
-            stories: storyRows
+            stories
         };
     } catch (error) {
         console.error(error);
@@ -104,21 +106,22 @@ export const getUserStories = async (userId, onlyActive, lastId, limit) => {
     const storyModel = new StoryModel();
 
     try {
-        let storyRows;
-        if (onlyActive === undefined)
-            [storyRows] = await storyModel.findUserStories(userId, lastId, limit);
+        let storiesRows;
+        if (onlyActive === undefined || onlyActive === null)
+            [storiesRows] = await storyModel.findUserStories(userId, lastId, limit);
         else if (onlyActive)
-            [storyRows] = await storyModel.findActiveUserStories(userId, lastId, limit);
+            [storiesRows] = await storyModel.findActiveUserStories(userId, lastId, limit);
         else
-            [storyRows] = await storyModel.findPastUserStories(userId, lastId, limit);
+            [storiesRows] = await storyModel.findPastUserStories(userId, lastId, limit);
 
+        const stories = storiesRows.forEach((story) => storyMapper(story));
 
-        const id = storyRows[0] ? storyRows[0].id : 0;
+        const id = storiesRows.length ? storiesRows[0].id : 0;
 
         return {
             success: true,
             lastId: id,
-            stories: storyRows
+            stories
         };
     } catch (error) {
         console.error(error);
