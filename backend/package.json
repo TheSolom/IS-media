@@ -1,5 +1,5 @@
 {
-    "name": "ismedia",
+    "name": "is-media",
     "version": "1.0.0",
     "description": "social media and realtime chatting website",
     "main": "app.js",
