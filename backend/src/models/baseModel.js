@@ -34,6 +34,9 @@ export default class BaseModel {
     async create(data) {
         const keys = Object.keys(data);
 
+        if (keys.length === 0)
+            throw new Error('Empty data object');
+
         const query = `INSERT INTO ${this.getTableName()} (${keys.join(', ')}) VALUES (:${keys.join(', :')})`;
 
         const result = await connection.execute(query, data);
@@ -70,5 +73,14 @@ export default class BaseModel {
 
         const result = await connection.execute(query, values);
         return result[0];
+    }
+
+    async search(data, condition, limit) {
+        const query = `SELECT * FROM ${this.getTableName()}
+                        WHERE ${condition} LIKE ?
+                        LIMIT ?`;
+
+        const result = await connection.execute(query, [`%${data}%`, limit.toString()]);
+        return result;
     }
 }
