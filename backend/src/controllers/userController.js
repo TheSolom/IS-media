@@ -7,7 +7,7 @@ export async function getUser(req, res, next) {
 
     try {
         if (!userId || userId < 1)
-            throw new CustomError('No valid user id is provided', 400);
+            throw new CustomError('No valid user id is provided', 422);
 
         const getUserResult = await userService.getUser(userId);
 
