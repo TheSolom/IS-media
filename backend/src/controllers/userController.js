@@ -23,27 +23,6 @@ export async function getUser(req, res, next) {
     }
 }
 
-export async function updateUser(req, res, next) {
-    try {
-        requestValidation(req);
-
-        const getUpdateUserResult = await userService.updateUser(
-            req.userId,
-            req.body
-        );
-
-        if (!getUpdateUserResult.success)
-            throw new CustomError(getUpdateUserResult.message, getUpdateUserResult.status);
-
-        res.status(200).json({
-            success: true,
-            message: `Successfully updated user with id '${req.userId}' `,
-        });
-    } catch (error) {
-        next(error);
-    }
-}
-
 export async function searchUser(req, res, next) {
     const { username } = req.params;
     const { limit } = req.query;
@@ -62,6 +41,27 @@ export async function searchUser(req, res, next) {
         res.status(200).json({
             success: true,
             users: searchUserResult.users,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function updateUser(req, res, next) {
+    try {
+        requestValidation(req);
+
+        const getUpdateUserResult = await userService.updateUser(
+            req.userId,
+            req.body
+        );
+
+        if (!getUpdateUserResult.success)
+            throw new CustomError(getUpdateUserResult.message, getUpdateUserResult.status);
+
+        res.status(200).json({
+            success: true,
+            message: `Successfully updated user with id '${req.userId}' `,
         });
     } catch (error) {
         next(error);
