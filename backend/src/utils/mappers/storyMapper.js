@@ -1,15 +1,14 @@
-const storyMapper = (storyRow) =>
-    storyRow.map((story) => (
-        {
-            storyId: story.id,
-            content: story.content,
-            createdAt: story.created_at,
-            author: {
-                id: story.author_id,
-                username: story.username,
-                profilePicture: story.profile_picture
-            },
-        }
-    ));
+const storyMapper = (storyRow) => (
+    {
+        id: storyRow.id,
+        content: storyRow.content,
+        createdAt: storyRow.created_at,
+        author: {
+            id: storyRow.author_id,
+            username: storyRow.username,
+            profilePicture: storyRow.profile_picture
+        },
+    }
+);
 
 export default storyMapper;
