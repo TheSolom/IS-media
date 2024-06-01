@@ -8,7 +8,7 @@ export const getUserPosts = async (userId, lastId, limit) => {
     try {
         const [postsRows] = await postModel.findUserPosts(userId, lastId, limit);
 
-        const posts = postsRows.forEach((postRow) => postMapper(postRow));
+        const posts = postsRows.map((postRow) => postMapper(postRow));
 
         const id = postsRows.length ? postsRows[0].id : 0;
 
@@ -33,7 +33,7 @@ export const getFeedPosts = async (userId, lastId, limit) => {
     try {
         const [postsRows] = await postModel.findFeedPosts(userId, lastId, limit);
 
-        const posts = postsRows.forEach((postRow) => postMapper(postRow));
+        const posts = postsRows.map((postRow) => postMapper(postRow));
 
         const id = postsRows.length ? postsRows[0].id : 0;
 
@@ -115,7 +115,7 @@ export const getSuggestedPosts = async (tagsRows, userId, limit) => {
 
         const [postsRows] = await postModel.findSuggestedPosts(tagIds, userId, limit);
 
-        const posts = postsRows.forEach((postRow) => postMapper(postRow));
+        const posts = postsRows.map((postRow) => postMapper(postRow));
 
         return {
             success: true,
