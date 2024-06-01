@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 
 import {
     isUserFollowee,
@@ -20,15 +20,15 @@ import {
 import cursorPaginationValidation from '../validations/cursorPaginationValidation.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
-const router = express.Router();
+const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/followers/:followerId', isUserFolloweeValidation, isUserFollowee);
+router.get('/followers/:userId/status', isUserFolloweeValidation, isUserFollowee);
 
 router.get('/followers', cursorPaginationValidation, getUserFollowersValidation, getUserFollowers);
 
-router.get('/followings/:followeeId', isUserFollowerValidation, isUserFollower);
+router.get('/followings/:userId/status', isUserFollowerValidation, isUserFollower);
 
 router.get('/followings', cursorPaginationValidation, getUserFollowingsValidation, getUserFollowings);
 

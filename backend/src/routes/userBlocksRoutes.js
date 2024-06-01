@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 
 import {
     getUserBlocks,
@@ -14,16 +14,16 @@ import {
 import cursorPaginationValidation from '../validations/cursorPaginationValidation.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
-const router = express.Router();
+const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/:userId', getUserBlockStatusValidation, getUserBlockStatus);
+router.get('/blocks/:userId/status', getUserBlockStatusValidation, getUserBlockStatus);
 
-router.get('/', cursorPaginationValidation, getUserBlocks);
+router.get('/blocks', cursorPaginationValidation, getUserBlocks);
 
-router.post('/', postUserBlockValidation, postUserBlock);
+router.post('/blocks', postUserBlockValidation, postUserBlock);
 
-router.delete('/:blockedId', deleteUserBlockValidation, deleteUserBlock);
+router.delete('/blocks/:blockedId', deleteUserBlockValidation, deleteUserBlock);
 
 export default router;
