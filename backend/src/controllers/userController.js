@@ -2,27 +2,6 @@ import * as userService from '../services/userService.js';
 import CustomError from '../utils/errorHandling.js';
 import requestValidation from '../utils/requestValidation.js';
 
-export async function getUser(req, res, next) {
-    const userId = Number(req.params.userId);
-
-    try {
-        if (!userId || userId < 1)
-            throw new CustomError('No valid user id is provided', 422);
-
-        const getUserResult = await userService.getUser(userId);
-
-        if (!getUserResult.success)
-            throw new CustomError(getUserResult.message, getUserResult.status);
-
-        res.status(200).json({
-            success: true,
-            user: getUserResult.user,
-        });
-    } catch (error) {
-        next(error);
-    }
-}
-
 export async function searchUser(req, res, next) {
     const { username } = req.params;
     const { limit } = req.query;
@@ -38,9 +17,30 @@ export async function searchUser(req, res, next) {
         if (!searchUserResult.success)
             throw new CustomError(searchUserResult.message, searchUserResult.status);
 
-        res.status(200).json({
+        res.status(searchUserResult.users.length ? 200 : 404).json({
             success: true,
             users: searchUserResult.users,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getUser(req, res, next) {
+    const userId = Number(req.params.userId);
+
+    try {
+        if (!userId || userId < 1)
+            throw new CustomError('No valid user id is provided', 422);
+
+        const getUserResult = await userService.getUser(userId);
+
+        if (!getUserResult.success)
+            throw new CustomError(getUserResult.message, getUserResult.status);
+
+        res.status(200).json({
+            success: true,
+            user: getUserResult.user,
         });
     } catch (error) {
         next(error);
