@@ -7,7 +7,7 @@ export async function getPostTags(req, res, next) {
 
     try {
         if (!postId || postId < 1)
-            throw new CustomError('No valid post id is provided', 400);
+            throw new CustomError('No valid post id is provided', 422);
 
         const getPostTagsResult = await postTagsService.getPostTags(
             postId

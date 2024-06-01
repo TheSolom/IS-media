@@ -16,7 +16,7 @@ export default async function getMostUsedTags(req, res, next) {
         if (!getMostUsedTagsResult.success)
             throw new CustomError(getMostUsedTagsResult.message, getMostUsedTagsResult.status);
 
-        res.status(200).json({
+        res.status(getMostUsedTagsResult.tags.length ? 200 : 204).json({
             success: true,
             tags: getMostUsedTagsResult.tags,
         });

@@ -3,13 +3,13 @@ import CustomError from '../utils/errorHandling.js';
 import requestValidation from '../utils/requestValidation.js';
 
 export async function isUserFollowee(req, res, next) {
-    const { followerId } = req.params;
+    const { userId } = req.params;
 
     try {
         requestValidation(req);
 
         const isUserFolloweeResult = await userFollowsService.isUserFollowee(
-            followerId,
+            userId,
             req.userId,
         );
 
@@ -18,7 +18,8 @@ export async function isUserFollowee(req, res, next) {
 
         res.status(200).json({
             success: true,
-            isFollowing: isUserFolloweeResult.isFollowing,
+            isFollowing: !!isUserFolloweeResult.followStatus.length,
+            since: isUserFolloweeResult.followStatus.length ? isUserFolloweeResult.followStatus[0].created_at : null
         });
     } catch (error) {
         next(error);
@@ -51,13 +52,13 @@ export async function getUserFollowers(req, res, next) {
 }
 
 export async function isUserFollower(req, res, next) {
-    const { followeeId } = req.params;
+    const { userId } = req.params;
 
     try {
         requestValidation(req);
 
         const isUserFollowerResult = await userFollowsService.isUserFollower(
-            followeeId,
+            userId,
             req.userId,
         );
 
@@ -66,7 +67,8 @@ export async function isUserFollower(req, res, next) {
 
         res.status(200).json({
             success: true,
-            isFollowing: isUserFollowerResult.isFollowing,
+            isFollowing: !!isUserFollowerResult.followStatus.length,
+            since: isUserFollowerResult.followStatus.length ? isUserFollowerResult.followStatus[0].created_at : null
         });
     } catch (error) {
         next(error);
@@ -132,12 +134,8 @@ export async function postUserFollow(req, res, next) {
             req.userId
         );
 
-        if (!postUserFollowResult.success) {
-            throw new CustomError(
-                postUserFollowResult.message,
-                postUserFollowResult.status
-            );
-        }
+        if (!postUserFollowResult.success)
+            throw new CustomError(postUserFollowResult.message, postUserFollowResult.status);
 
         res.status(201).json({
             success: true,
@@ -159,12 +157,8 @@ export async function deleteUserFollow(req, res, next) {
             req.userId
         );
 
-        if (!deleteUserFollowResult.success) {
-            throw new CustomError(
-                deleteUserFollowResult.message,
-                deleteUserFollowResult.status
-            );
-        }
+        if (!deleteUserFollowResult.success)
+            throw new CustomError(deleteUserFollowResult.message, deleteUserFollowResult.status);
 
         res.status(200).json({
             success: true,

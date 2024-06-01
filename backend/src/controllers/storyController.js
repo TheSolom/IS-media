@@ -58,7 +58,7 @@ export async function getStory(req, res, next) {
 
     try {
         if (!storyId || storyId < 1)
-            throw new CustomError('No valid story id is provided', 400);
+            throw new CustomError('No valid story id is provided', 422);
 
         const getStoryResult = await storyService.getStory(storyId);
 
@@ -103,7 +103,7 @@ export async function deleteStory(req, res, next) {
 
     try {
         if (!storyId || storyId < 1)
-            throw new CustomError('No valid story id is provided', 400);
+            throw new CustomError('No valid story id is provided', 422);
 
         const deleteStoryResult = await storyService.deleteStory(
             storyId,

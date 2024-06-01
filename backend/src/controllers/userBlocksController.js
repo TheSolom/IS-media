@@ -18,7 +18,8 @@ export async function getUserBlockStatus(req, res, next) {
 
         res.status(200).json({
             success: true,
-            blockStatus: getUserBlocksResult.blockStatus,
+            blockStatus: !!getUserBlocksResult.blockStatus.length,
+            since: getUserBlocksResult.blockStatus.length ? getUserBlocksResult.blockStatus[0].created_at : null
         });
     } catch (error) {
         next(error);
@@ -85,10 +86,7 @@ export async function deleteUserBlock(req, res, next) {
         );
 
         if (!deleteUserBlockResult.success)
-            throw new CustomError(
-                deleteUserBlockResult.message,
-                deleteUserBlockResult.status
-            );
+            throw new CustomError(deleteUserBlockResult.message, deleteUserBlockResult.status);
 
         res.status(200).json({
             success: true,
