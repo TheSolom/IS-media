@@ -7,7 +7,7 @@ export async function getCommentTags(req, res, next) {
 
     try {
         if (!commentId || commentId < 1)
-            throw new CustomError('No valid comment id is provided', 400);
+            throw new CustomError('No valid comment id is provided', 422);
 
         const getCommentTagsResult = await commentTagsService.getCommentTags(
             commentId
