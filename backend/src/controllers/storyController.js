@@ -3,17 +3,33 @@ import CustomError from '../utils/errorHandling.js';
 import requestValidation from '../utils/requestValidation.js';
 
 export async function getUserStories(req, res, next) {
-    const { active, lastId, limit } = req.query;
+    const { activeOnly, pastOnly, lastId, limit } = req.query;
 
     try {
         requestValidation(req);
 
-        const getUserStoriesResult = await storyService.getUserStories(
-            req.userId,
-            active,
-            lastId ?? 0,
-            limit ?? 10
-        );
+        let getUserStoriesResult = null;
+
+        if (activeOnly === 'true') {
+            getUserStoriesResult = await storyService.getActiveUserStories(
+                req.userId,
+                lastId ?? 0,
+                limit ?? 10
+            );
+        }
+        else if (pastOnly === 'true') {
+            getUserStoriesResult = await storyService.getPastUserStories(
+                req.userId,
+                lastId ?? 0,
+                limit ?? 10
+            );
+        } else {
+            getUserStoriesResult = await storyService.getUserStories(
+                req.userId,
+                lastId ?? 0,
+                limit ?? 10
+            );
+        }
 
         if (!getUserStoriesResult.success)
             throw new CustomError(getUserStoriesResult.message, getUserStoriesResult.status);
