@@ -1,10 +1,14 @@
 import { body, query } from 'express-validator';
 
 export const getUserStoriesValidation = [
-    query('active', 'active must be a boolean value true/false')
-        .if(query('active').exists())
+    query('activeOnly', 'activeOnly must be a boolean value true/false')
+        .if(query('activeOnly').exists())
         .isBoolean()
-        .isIn([true, false])
+        .isIn([true, false]),
+    query('pastOnly', 'pastOnly must be a boolean value true/false')
+        .if(query('pastOnly').exists())
+        .isBoolean()
+        .isIn([true, false]),
 ];
 
 export const createStoryValidation = [
