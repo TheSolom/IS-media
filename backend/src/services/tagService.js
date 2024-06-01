@@ -1,9 +1,9 @@
-import { isURL, isAlphanumeric } from 'validator';
+import validator from 'validator';
 
 import TagsModel from '../models/tagsModel.js';
 
 export const exportTags = async (title, content) => {
-    const tags = isURL(content) ?
+    const tags = validator.isURL(content) ?
         title.match(/#([^#\s]+)/g) : content.match(/#([^#\s]+)/g);
 
     const uniqueTags = [...new Set(tags)];
@@ -27,7 +27,7 @@ export const postTags = async (tags) => {
         const createTagsPromises = tags.map(async (tag) => {
             const tagNormalized = tag.substring(1).toLowerCase();
 
-            if (!isAlphanumeric(tagNormalized))
+            if (!validator.isAlphanumeric(tagNormalized))
                 return Promise.resolve();
 
             const [tagRow] = await tagsModel.find({ tag: tagNormalized });
