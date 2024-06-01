@@ -10,7 +10,7 @@ export async function getPostLikes(req, res, next) {
 
     try {
         if (!postId || postId < 1)
-            throw new CustomError('No valid post id is provided', 400);
+            throw new CustomError('No valid post id is provided', 422);
 
         requestValidation(req);
 
@@ -38,7 +38,7 @@ export async function postPostLike(req, res, next) {
 
     try {
         if (!postId || postId < 1)
-            throw new CustomError('No valid post id is provided', 400);
+            throw new CustomError('No valid post id is provided', 422);
 
         const postPostLikeResult = await postLikesService.postPostLike(
             postId,
@@ -51,16 +51,18 @@ export async function postPostLike(req, res, next) {
         const getPostTagsResult = await postTagsService.getPostTags(postId);
 
         if (!getPostTagsResult.success)
-            throw new CustomError(getPostTagsResult.message, getPostTagsResult.status);
+            throw new CustomError('An error occurred while liking the post', 500);
 
-        const { tags: tagsRows } = getPostTagsResult;
+        if (getPostTagsResult.tags.length) {
+            const { tags: tagsRows } = getPostTagsResult;
 
-        const tagsIds = tagsRows.map(tagRow => tagRow.tag_id);
+            const tagsIds = tagsRows.map(tagRow => tagRow.tag_id);
 
-        const putUserTagsResult = await userTagsService.putUserTags(tagsIds, req.userId);
+            const putUserTagsResult = await userTagsService.putUserTags(tagsIds, req.userId);
 
-        if (!putUserTagsResult.success)
-            throw new CustomError(putUserTagsResult.message, putUserTagsResult.status);
+            if (!putUserTagsResult.success)
+                throw new CustomError('An error occurred while liking the post', 500);
+        }
 
         res.status(201).json({
             success: true,
@@ -77,7 +79,7 @@ export async function deletePostLike(req, res, next) {
 
     try {
         if (!postId || postId < 1)
-            throw new CustomError('No valid postId id is provided', 400);
+            throw new CustomError('No valid postId id is provided', 422);
 
         const deletePostLikeResult = await postLikesService.deletePostLike(
             postId,
@@ -90,16 +92,18 @@ export async function deletePostLike(req, res, next) {
         const getPostTagsResult = await postTagsService.getPostTags(postId);
 
         if (!getPostTagsResult.success)
-            throw new CustomError(getPostTagsResult.message, getPostTagsResult.status);
+            throw new CustomError('An error occurred while disliking the post', 500);
 
-        const { tags: tagsRows } = getPostTagsResult;
+        if (getPostTagsResult.tags.length) {
+            const { tags: tagsRows } = getPostTagsResult;
 
-        const tagsIds = tagsRows.map(tagRow => tagRow.tag_id);
+            const tagsIds = tagsRows.map(tagRow => tagRow.tag_id);
 
-        const deleteUserTagsResult = await userTagsService.deleteUserTags(tagsIds, req.userId);
+            const deleteUserTagsResult = await userTagsService.deleteUserTags(tagsIds, req.userId);
 
-        if (!deleteUserTagsResult.success)
-            throw new CustomError(deleteUserTagsResult.message, deleteUserTagsResult.status);
+            if (!deleteUserTagsResult.success)
+                throw new CustomError('An error occurred while disliking the post', 500);
+        }
 
         res.status(200).json({
             success: true,

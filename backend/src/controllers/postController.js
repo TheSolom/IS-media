@@ -1,12 +1,12 @@
+import { isURL } from 'validator';
+
 import * as postService from '../services/postService.js';
 import * as tagService from '../services/tagService.js';
 import * as postTagsService from '../services/postTagsService.js';
 import * as userTagsService from '../services/userTagsService.js';
 import CustomError from '../utils/errorHandling.js';
 import requestValidation from '../utils/requestValidation.js';
-import isSameAuthor from '../utils/isSameAuthor.js';
 import isContentUnchanged from '../utils/isContentUnchanged.js';
-import isValidUrl from '../utils/isValidUrl.js';
 import deleteMedia from '../utils/deleteMedia.js';
 
 export async function getUserPosts(req, res, next) {
@@ -95,7 +95,7 @@ export async function getPost(req, res, next) {
 
     try {
         if (!postId || postId < 1)
-            throw new CustomError('No valid post id is provided', 400);
+            throw new CustomError('No valid post id is provided', 422);
 
         const getPostResult = await postService.getPost(postId);
 
@@ -171,15 +171,19 @@ export async function updatePost(req, res, next) {
 
         const getPostResult = await postService.getPost(postId);
 
-        if (!getPostResult.success)
-            throw new CustomError(getPostResult.message, getPostResult.status);
+        if (!getPostResult.success) {
+            if (getPostResult.status === 404)
+                throw new CustomError(getPostResult.message, getPostResult.status);
+            else
+                throw new CustomError('An error occurred while updating the post', 500);
+        }
 
         const { post: currentPost } = getPostResult;
 
-        if (isSameAuthor(currentPost, req.userId))
+        if (currentPost.author.id !== req.userId)
             throw new CustomError('You are not allowed to update this post', 401);
 
-        if (isContentUnchanged(currentPost, title, content))
+        if (isContentUnchanged(currentPost.title, title, currentPost.content, content))
             return res.status(200).json({
                 success: true,
                 message: 'No changes detected',
@@ -213,8 +217,8 @@ export async function updatePost(req, res, next) {
         if (!updatePostResult.success)
             throw new CustomError(updatePostResult.message, updatePostResult.status);
 
-        if (isValidUrl(currentPost.content) && currentPost.content !== content)
-            await deleteMedia(currentPost, 'content');
+        if (isURL(currentPost.content) && currentPost.content !== content)
+            await deleteMedia(currentPost.content);
 
         const newTags = await tagService.exportTags(title, content);
 
@@ -256,16 +260,20 @@ export async function deletePost(req, res, next) {
 
     try {
         if (!postId || postId < 1)
-            throw new CustomError('No valid post id is provided', 400);
+            throw new CustomError('No valid post id is provided', 422);
 
         const getPostResult = await postService.getPost(postId);
 
-        if (!getPostResult.success)
-            throw new CustomError(getPostResult.message, getPostResult.status);
+        if (!getPostResult.success) {
+            if (getPostResult.status === 404)
+                throw new CustomError(getPostResult.message, getPostResult.status);
+            else
+                throw new CustomError('An error occurred while deleting the post', 500);
+        }
 
         const { post: currentPost } = getPostResult;
 
-        if (isSameAuthor(currentPost, req.userId))
+        if (currentPost.author.id !== req.userId)
             throw new CustomError('You are not allowed to delete this post', 401);
 
         const getPostTagsResult = await postTagsService.getPostTags(postId);
