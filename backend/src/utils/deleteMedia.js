@@ -13,9 +13,9 @@ const getResourceType = (format) => {
     return imageFormats.includes(format) ? "image" : "video";
 };
 
-const deleteMedia = async (userRow, fieldName) => {
+const deleteMedia = async (mediaUrl) => {
     const REGEX = /\/SocialMedia\/([^/]+)/;
-    const match = userRow[fieldName].match(REGEX);
+    const match = mediaUrl.match(REGEX);
 
     if (match) {
         const publicId = match[0].slice(1, -4);
