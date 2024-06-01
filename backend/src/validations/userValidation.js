@@ -76,11 +76,11 @@ export const updateUserValidation = [
         .withMessage('about must be between 1-45 characters long'),
     body('profilePicture')
         .optional()
-        .custom((value) => !value ? true : checkImageUrl(value))
+        .custom(async (value) => !value ? true : checkImageUrl(value))
         .withMessage('Profile picture must be a URL'),
     body('coverPicture')
         .optional()
-        .custom((value) => !value ? true : checkImageUrl(value))
+        .custom(async (value) => !value ? true : checkImageUrl(value))
         .withMessage('Cover picture must be a URL'),
     body('livesIn')
         .optional()
