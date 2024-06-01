@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 
 import {
     postLogin,
@@ -16,7 +16,7 @@ import {
 } from '../validations/authValidation.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
-const router = express.Router();
+const router = Router();
 
 router.post('/login', loginValidation, postLogin);
 
