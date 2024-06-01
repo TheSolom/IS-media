@@ -1,20 +1,31 @@
 import { body, param } from 'express-validator';
 
 import UserModel from '../models/userModel.js';
+import checkImageUrl from '../utils/isValidImageUrl.js';
+
+export const searchUserValidation = [
+    param('username')
+        .trim()
+        .notEmpty()
+        .withMessage('No valid username is provided')
+        .isAlphanumeric()
+        .withMessage('Username must only contain letters and numbers'),
+];
 
 export const updateUserValidation = [
     body('firstname')
-        .optional()
         .trim()
-        .isString()
-        .withMessage('Firstname must be a string'),
+        .isLength({ min: 1, max: 45 })
+        .withMessage('Firstname must be between 1-45 characters long')
+        .isAlpha()
+        .withMessage('Firstname must only contain letters'),
     body('lastname')
-        .optional()
         .trim()
-        .isString()
-        .withMessage('Lastname must be a string'),
+        .isLength({ min: 1, max: 45 })
+        .withMessage('Lastname must be between 1-45 characters long')
+        .isAlpha()
+        .withMessage('Lastname must only contain letters'),
     body('username')
-        .optional()
         .trim()
         .isLength({ min: 5, max: 20 })
         .withMessage('Username must be between 5-20 characters long')
@@ -25,12 +36,9 @@ export const updateUserValidation = [
             const [userRow] = await userModel.find({ username: signingUsername });
 
             if (userRow.length && userRow[0].id !== req.userId)
-                throw Error(
-                    'This username is already in use, please try another username'
-                );
+                throw Error('This username is already in use, please try another username');
         }),
     body('email')
-        .optional()
         .normalizeEmail({ gmail_remove_dots: false })
         .isEmail()
         .withMessage('Please enter a valid email address')
@@ -42,57 +50,56 @@ export const updateUserValidation = [
                 throw Error('This Email is already in use, please try another email');
         }),
     body('password')
-        .optional()
         .trim()
         .isLength({ min: 8, max: 64 })
-        .withMessage('Password must be 8 to 64 characters long')
+        .withMessage('Password must be between 8-64 characters long')
         .isAlphanumeric()
-        .withMessage(
-            'Password must contains only numbers and letters without spaces'
-        ),
+        .withMessage('Password must contains only numbers and letters without spaces'),
     body('birthDate')
-        .optional()
-        .notEmpty()
-        .withMessage('Birth date is required')
         .isISO8601()
-        .withMessage('Birth date must be a valid yyyy-mm-dd date'),
+        .withMessage('Birth date must be a valid yyyy-mm-dd date')
+        .custom((signingBirthDate) => {
+            const age = Math.floor(
+                (new Date() - new Date(signingBirthDate)) / (1000 * 60 * 60 * 24 * 365) // convert ms to years
+            );
+            return age >= 13;
+        })
+        .withMessage('You must be at least 13 years old'),
     body('gender')
-        .optional()
         .trim()
         .isIn(['male', 'female', 'Male', 'Female'])
         .withMessage('Gender must be male or female'),
     body('about')
         .optional()
         .trim()
-        .isString()
-        .withMessage('About must be a string'),
+        .isLength({ min: 1, max: 45 })
+        .withMessage('about must be between 1-45 characters long'),
     body('profilePicture')
         .optional()
-        .trim()
-        .isURL()
+        .custom((value) => !value ? true : checkImageUrl(value))
         .withMessage('Profile picture must be a URL'),
     body('coverPicture')
         .optional()
-        .trim()
-        .isURL()
+        .custom((value) => !value ? true : checkImageUrl(value))
         .withMessage('Cover picture must be a URL'),
     body('livesIn')
         .optional()
         .trim()
-        .isString()
-        .withMessage('LivesIn must be a string'),
+        .isLength({ min: 1, max: 45 })
+        .withMessage('LivesIn must be between 1-45 characters long'),
     body('worksAt')
         .optional()
         .trim()
-        .isString()
-        .withMessage('WorksAt must be a string'),
+        .isLength({ min: 1, max: 45 })
+        .withMessage('WorksAt must be between 1-45 characters long'),
     body('relationship')
         .optional()
         .trim()
-        .isString()
-        .withMessage('Relationship must be a string'),
+        .isLength({ min: 1, max: 45 })
+        .withMessage('Relationship must be between 1-45 characters long'),
     body().custom((value, { req }) => {
-        if (Object.keys(req.body).length === 0) throw new Error('No data provided');
+        if (Object.keys(req.body).length === 0)
+            throw new Error('No data provided');
 
         const allowedFields = [
             'firstname',
@@ -117,15 +124,4 @@ export const updateUserValidation = [
 
         return true;
     }),
-];
-
-export const searchUserValidation = [
-    param('username')
-        .trim()
-        .notEmpty()
-        .withMessage('No valid username is provided')
-        .isLength({ min: 5, max: 20 })
-        .withMessage('Username must be between 5-20 characters long')
-        .isAlphanumeric()
-        .withMessage('Username must only contain letters and numbers'),
 ];

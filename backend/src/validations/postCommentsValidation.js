@@ -1,18 +1,19 @@
 import { body, param } from 'express-validator';
+import validator from 'validator';
 
 import PostModel from '../models/postModel.js';
 
 export const getPostCommentsValidation = [
     param('postId', 'No valid post id is provided')
-        .isInt({ min: 1 })
         .custom(async (value) => {
-            if (Number.isInteger(value) && value > 0) {
-                const postModel = new PostModel();
-                const [postRow] = await postModel.find({ id: value });
+            if (!validator.isInt(value, { min: 1 }))
+                return false;
 
-                if (!postRow.length)
-                    throw new Error('post is not found');
-            }
+            const postModel = new PostModel();
+            const [postRow] = await postModel.find({ id: value });
+
+            if (!postRow.length)
+                throw new Error('post is not found');
 
             return true;
         }),
@@ -32,15 +33,15 @@ export const createPostCommentValidation = [
         .isLength({ max: 100 })
         .withMessage('Content must be at most 100 characters'),
     body('postId', 'No valid post id is provided')
-        .isInt({ min: 1 })
         .custom(async (value) => {
-            if (Number.isInteger(value) && value > 0) {
-                const postModel = new PostModel();
-                const [postRow] = await postModel.find({ id: value });
+            if (!validator.isInt(value, { min: 1 }))
+                return false;
 
-                if (!postRow.length)
-                    throw new Error('post is not found');
-            }
+            const postModel = new PostModel();
+            const [postRow] = await postModel.find({ id: value });
+
+            if (!postRow.length)
+                throw new Error('post is not found');
 
             return true;
         }),

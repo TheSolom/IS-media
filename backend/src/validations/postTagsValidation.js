@@ -3,7 +3,7 @@ import { param } from 'express-validator';
 const getTagPostsValidation = [
     param('tag')
         .trim()
-        .exists({ values: 'falsy' })
+        .notEmpty()
         .withMessage('No valid tag is provided')
         .isLength({ max: 499 })
         .withMessage('Tag must be between 1 - 499 characters long')
