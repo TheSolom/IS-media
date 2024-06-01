@@ -9,9 +9,9 @@ import TokenBlacklistModel from '../models/tokenBlacklistModel.js';
 import TokenModel from '../models/tokenModel.js';
 import transporter from '../configs/transporter.js';
 
-const createToken = (id, username, MAX_AGE) => {
+const createToken = (userId, username, MAX_AGE) => {
     try {
-        const token = jwt.sign({ id, username }, process.env.JWT_SECRET, {
+        const token = jwt.sign({ userId, username }, process.env.JWT_SECRET, {
             expiresIn: MAX_AGE,
         });
 
@@ -82,17 +82,6 @@ export const loginUser = async (emailOrUsername, password, MAX_AGE) => {
             status: 500,
         };
 
-    try {
-        await userModel.update({ is_active: 1 }, { id: userRow[0].id });
-    } catch (error) {
-        console.error(error);
-        return {
-            success: false,
-            message: 'An error occurred while logging in the user',
-            status: 500,
-        };
-    }
-
     return {
         success: true,
         token: createTokenResult.token,
@@ -150,27 +139,14 @@ export const signupUser = async (
 export const logoutUser = async (cookies) => {
     const parsedCookies = parseUtil.parseCookies(cookies);
 
-    const { id, exp } = parseUtil.parseJwt(parsedCookies.jwt);
+    const { userId, exp } = parseUtil.parseJwt(parsedCookies.jwt);
 
     const tokenBlacklist = new TokenBlacklistModel();
     try {
         await tokenBlacklist.create({
             token: parsedCookies.jwt,
-            expiration_date: new Date(exp),
+            expiration_date: new Date(exp * 1000),
         });
-    } catch (error) {
-        console.error(error);
-        return {
-            success: false,
-            message: 'An error occurred while logging out the user',
-            status: 500,
-        };
-    }
-
-    const userModel = new UserModel();
-
-    try {
-        await userModel.update({ is_active: 0 }, { id });
     } catch (error) {
         console.error(error);
         return {
@@ -204,7 +180,7 @@ export const forgotPassword = async (emailOrUsername, MAX_AGE) => {
             return {
                 success: false,
                 message: 'Incorrect email. Please try again',
-                status: 422,
+                status: 401,
             };
 
     } catch (error) {
