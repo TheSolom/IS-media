@@ -1,13 +1,33 @@
 import UserBlocksModel from '../models/userBlocksModel.js';
 import UserFollowersModel from '../models/userFollowersModel.js';
 
+export const getUserBlockStatus = async (userId1, userId2) => {
+    const userBlocksModel = new UserBlocksModel();
+
+    try {
+        const [blockRow] = await userBlocksModel.findUserBlockStatus(userId1, userId2);
+
+        return {
+            success: true,
+            blockStatus: blockRow
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: 'An error occurred while fetching the block status',
+            status: 500,
+        };
+    }
+};
+
 export const getUserBlocks = async (userId, lastId, limit) => {
     const userBlocksModel = new UserBlocksModel();
 
     try {
         const [blocksRows] = await userBlocksModel.findBlocks(userId, lastId, limit);
 
-        const id = blocksRows[0] ? blocksRows[0].id : 0;
+        const id = blocksRows.length ? blocksRows[0].id : 0;
 
         return {
             success: true,
@@ -19,23 +39,6 @@ export const getUserBlocks = async (userId, lastId, limit) => {
         return {
             success: false,
             message: 'An error occurred while fetching user blocks',
-            status: 500,
-        };
-    }
-};
-
-export const getUserBlockStatus = async (userId1, userId2) => {
-    const userBlocksModel = new UserBlocksModel();
-
-    try {
-        const [blockRow] = await userBlocksModel.findUserBlockStatus(userId1, userId2);
-
-        return { success: true, blockStatus: blockRow.length };
-    } catch (error) {
-        console.error(error);
-        return {
-            success: false,
-            message: 'An error occurred while fetching the block status',
             status: 500,
         };
     }
@@ -66,7 +69,7 @@ export const postUserBlock = async (blockedId, blockerId) => {
             return {
                 success: false,
                 message: `User is already blocked`,
-                status: 400,
+                status: 409,
             };
 
         if (error.code === 'ER_NO_REFERENCED_ROW_2')

@@ -8,7 +8,10 @@ export const isUserFollowee = async (followerId, userId) => {
     try {
         const [followRow] = await userFollowersModel.find({ user_id: userId, follower_id: followerId });
 
-        return { success: true, isFollowing: !!followRow.length };
+        return {
+            success: true,
+            followStatus: followRow
+        };
     } catch (error) {
         console.error(error);
         return {
@@ -48,7 +51,10 @@ export const isUserFollower = async (followeeId, userId) => {
     try {
         const [followRow] = await userFollowersModel.find({ user_id: followeeId, follower_id: userId });
 
-        return { success: true, isFollowing: !!followRow.length };
+        return {
+            success: true,
+            followStatus: followRow
+        };
     } catch (error) {
         console.error(error);
         return {
@@ -153,11 +159,12 @@ export const postUserFollow = async (followeeId, followerId) => {
         return { success: true };
     } catch (error) {
         console.error(error);
+
         if (error.code === 'ER_DUP_ENTRY')
             return {
                 success: false,
                 message: `User is already following`,
-                status: 400,
+                status: 409,
             };
 
         if (error.code === 'ER_NO_REFERENCED_ROW_2')
