@@ -1,4 +1,4 @@
-import { isURL } from 'validator';
+import validator from 'validator';
 
 import PostCommentsModel from '../models/postCommentsModel.js';
 import deleteMedia from '../utils/deleteMedia.js';
@@ -95,7 +95,7 @@ export const updatePostComment = async (title, content, commentId, authorId) => 
 
         const updateResult = await postCommentsModel.update({ title, content }, { id: commentId });
 
-        if (isURL(commentRow[0].content) && commentRow[0].content !== content)
+        if (validator.isURL(commentRow[0].content) && commentRow[0].content !== content)
             await deleteMedia(commentRow[0].content);
 
         return {

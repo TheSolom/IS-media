@@ -1,4 +1,4 @@
-import { isURL } from 'validator';
+import validator from 'validator';
 
 import * as postCommentsService from '../services/postCommentsService.js';
 import * as tagService from '../services/tagService.js';
@@ -165,7 +165,7 @@ export async function updatePostComment(req, res, next) {
         if (!updatePostCommentResult.success)
             throw new CustomError(updatePostCommentResult.message, updatePostCommentResult.status);
 
-        if (isURL(currentComment.content) && currentComment.content !== content)
+        if (validator.isURL(currentComment.content) && currentComment.content !== content)
             await deleteMedia(currentComment.content);
 
         const newTags = await tagService.exportTags(title, content);

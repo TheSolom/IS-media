@@ -1,4 +1,4 @@
-import { isURL } from 'validator';
+import validator from 'validator';
 
 import * as postService from '../services/postService.js';
 import * as tagService from '../services/tagService.js';
@@ -217,7 +217,7 @@ export async function updatePost(req, res, next) {
         if (!updatePostResult.success)
             throw new CustomError(updatePostResult.message, updatePostResult.status);
 
-        if (isURL(currentPost.content) && currentPost.content !== content)
+        if (validator.isURL(currentPost.content) && currentPost.content !== content)
             await deleteMedia(currentPost.content);
 
         const newTags = await tagService.exportTags(title, content);
