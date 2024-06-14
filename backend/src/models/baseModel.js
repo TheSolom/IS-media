@@ -31,7 +31,7 @@ export default class BaseModel {
         return result;
     }
 
-    async create(data) {
+    async create(data, options = { returning: false }) {
         const keys = Object.keys(data);
 
         if (keys.length === 0)
@@ -40,6 +40,19 @@ export default class BaseModel {
         const query = `INSERT INTO ${this.getTableName()} (${keys.join(', ')}) VALUES (:${keys.join(', :')})`;
 
         const result = await connection.execute(query, data);
+
+        if (options.returning && result[0].affectedRows) {
+            const returnedResult = await this.find({ id: result[0].insertId });
+
+            if (returnedResult.length === 0)
+                throw new Error('Failed to find newly created record');
+
+            return {
+                ...result[0],
+                data: returnedResult[0][0]
+            };
+        };
+
         return result[0];
     }
 
